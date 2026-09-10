@@ -1,0 +1,699 @@
+// This is your Prisma schema file
+// Learn more at: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────────────────────
+
+enum Role {
+  CONSUMER
+  AUTHORITY_OFFICER
+  SENIOR_AUTHORITY
+  ADMIN
+}
+
+enum ScanStatus {
+  PENDING
+  PROCESSING
+  COMPLETE
+  FAILED
+}
+
+enum DetectionStatus {
+  DETECTED
+  NOT_DETECTED
+  UNCLEAR
+  NOT_APPLICABLE
+  REQUIRES_REVIEW
+}
+
+enum SourcePriority {
+  MANUFACTURER
+  OFFICIAL
+  ECOMMERCE
+  OTHER
+}
+
+enum MatchStatus {
+  MATCH
+  MISMATCH
+  UNVERIFIED
+}
+
+enum InspectionStatus {
+  DRAFT
+  IN_PROGRESS
+  PENDING_REVIEW
+  CLOSED
+}
+
+enum ComplianceStatus {
+  PASS
+  WARNING
+  FAIL
+  NOT_APPLICABLE
+  REQUIRES_REVIEW
+}
+
+enum ViolationSeverity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum AuthorityDecision {
+  COMPLIANT
+  NON_COMPLIANT
+  FURTHER_INVESTIGATION
+  DISMISSED
+}
+
+enum ComplaintStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  ASSIGNED
+  INVESTIGATING
+  RESOLVED
+  CLOSED
+}
+
+enum CaseStatus {
+  SUBMITTED
+  UNDER_REVIEW
+  ASSIGNED
+  INVESTIGATION
+  DECISION_PENDING
+  RESOLVED
+  CLOSED
+  REJECTED
+}
+
+enum CasePriority {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum ReportFormat {
+  PDF
+  EDITABLE
+}
+
+enum AuditAction {
+  LOGIN
+  LOGOUT
+  REGISTER
+  PRODUCT_SCAN
+  INSPECTION_CREATED
+  INSPECTION_UPDATED
+  COMPLIANCE_ANALYSIS
+  RULE_CHANGED
+  COMPLAINT_SUBMITTED
+  COMPLAINT_CHANGED
+  REPORT_GENERATED
+  AUTHORITY_DECISION
+  ADMIN_ACTION
+  USER_CREATED
+  USER_UPDATED
+  FILE_UPLOAD
+  EVIDENCE_CREATED
+  EVIDENCE_ATTACHED
+  REPORT_DOWNLOADED
+  CASE_CREATED
+  CASE_ASSIGNED
+  CASE_REASSIGNED
+  CASE_PRIORITY_CHANGED
+  CASE_STATUS_CHANGED
+  CASE_RESOLVED
+  CASE_CLOSED
+}
+
+enum EvidenceType {
+  SCAN_IMAGE
+  EXTRACTED_TEXT
+  ONLINE_SOURCE
+  OFFICER_NOTE
+  OFFICER_OBSERVATION
+  FIELD_MEASUREMENT
+  COMPLIANCE_FINDING
+  ONLINE_DISCREPANCY
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUTH & USERS
+// ─────────────────────────────────────────────────────────────
+
+model User {
+  id             String    @id @default(cuid())
+  email          String    @unique
+  name           String
+  hashedPassword String
+  role           Role      @default(CONSUMER)
+  isActive       Boolean   @default(true)
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  // Relations
+  scans            ProductScan[]
+  complaints       Complaint[]       @relation("ConsumerComplaints")
+  inspections      Inspection[]      @relation("OfficerInspections")
+  decisions        OfficerDecision[]
+  complaintUpdates ComplaintUpdate[]
+  reports          Report[]
+  auditLogs        AuditLog[]
+  ruleVersions     RuleVersion[]
+  evidencesCreated Evidence[]        @relation("UserEvidence")
+  casesAssigned    RegulatoryCase[]  @relation("AssignedOfficerCases")
+  casesCreated     RegulatoryCase[]  @relation("CreatedByCases")
+
+  @@index([email])
+  @@index([role])
+}
+
+// ─────────────────────────────────────────────────────────────
+// PRODUCT REPOSITORY
+// ─────────────────────────────────────────────────────────────
+
+model Product {
+  id              String    @id @default(cuid())
+  name            String
+  brand           String?
+  genericName     String?
+  barcode         String?   @unique
+  manufacturer    String?
+  packer          String?
+  importer        String?
+  countryOfOrigin String?
+  category        String?
+  metadata        Json?     // flexible extra data
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  scans       ProductScan[]
+  inspections Inspection[]
+  complaints  Complaint[]
+
+  @@index([barcode])
+  @@index([brand])
+  @@index([name])
+}
+
+model ProductScan {
+  id        String     @id @default(cuid())
+  productId String?
+  userId    String
+  status    ScanStatus @default(PENDING)
+  notes     String?
+
+  // Phase 2: OCR & Product Identification
+  rawOcrText                 String?   @db.Text
+  ocrStatus                  String?   @default("PENDING")
+  ocrError                   String?
+  identificationStatus       String?   @default("PENDING")
+  identifiedProductName      String?
+  identifiedBrand            String?
+  identifiedCategory         String?
+  identifiedManufacturer     String?
+  identificationConfidence   Float?
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  // Relations
+  product               Product?               @relation(fields: [productId], references: [id])
+  user                  User                   @relation(fields: [userId], references: [id])
+  images                ScanImage[]
+  extractedDeclarations ExtractedDeclaration[]
+  onlineVerifications   OnlineVerification[]
+  inspections           Inspection[]
+  complaints            Complaint[]
+  complianceChecks      ComplianceCheck[]
+  violations            Violation[]
+  evidence              Evidence[]
+  cases                 RegulatoryCase[]
+
+  @@index([userId])
+  @@index([productId])
+  @@index([status])
+}
+
+model ScanImage {
+  id               String   @id @default(cuid())
+  scanId           String
+  storageKey       String   // path/key in StorageService
+  originalFilename String
+  mimeType         String
+  sizeBytes        Int
+  ocrText          String?  @db.Text // Phase 2: per-image raw OCR text
+  uploadedAt       DateTime @default(now())
+
+  // Relations
+  scan     ProductScan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  evidence Evidence[]
+
+  @@index([scanId])
+}
+
+// All extracted declarations from OCR (Phase 2 populates values)
+// Schema is created in Phase 1 so Phase 2 can insert directly
+model ExtractedDeclaration {
+  id              String          @id @default(cuid())
+  scanId          String
+  fieldName       String          // e.g. "net_quantity", "mrp", "manufacturer"
+  rawValue        String?         // raw OCR text
+  normalizedValue String?         // cleaned/parsed value
+  confidence      Float?          // 0.0 - 1.0
+  detectionStatus DetectionStatus @default(REQUIRES_REVIEW)
+  boundingBox     Json?           // {x, y, width, height, imageIndex}
+  sourceText      String?         @db.Text // Phase 2: exact quote snippet from packaging
+  createdAt       DateTime        @default(now())
+
+  // Relations
+  scan     ProductScan @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  evidence Evidence[]
+
+  @@index([scanId])
+  @@index([fieldName])
+}
+
+// ─────────────────────────────────────────────────────────────
+// ONLINE VERIFICATION (Phase 3 populates)
+// ─────────────────────────────────────────────────────────────
+
+model OnlineVerification {
+  id                 String                @id @default(cuid())
+  scanId             String
+  sourceUrl          String
+  domain             String?
+  status             String                @default("PENDING") // PENDING, SUCCESS, FAILED
+  errorMessage       String?
+  overallMatchStatus MatchStatus           @default(UNVERIFIED)
+  sourcePriority     SourcePriority        @default(OTHER)
+  fieldName          String?               // Backward compatibility
+  sourceValue        String?               // Backward compatibility
+  packageValue       String?               // Backward compatibility
+  confidence         Float?
+  verifiedAt         DateTime              @default(now())
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+
+  // Relations
+  scan               ProductScan           @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  snapshot           OnlineListingSnapshot?
+  fields             OnlineListingField[]
+  discrepancies      OnlineDiscrepancy[]
+  evidence           Evidence[]
+
+  @@index([scanId])
+  @@index([sourceUrl])
+  @@index([status])
+}
+
+model OnlineListingSnapshot {
+  id             String             @id @default(cuid())
+  verificationId String             @unique
+  contentHash    String             // SHA-256 hash of response
+  httpStatus     Int
+  contentType    String?
+  rawHtml        String?            @db.Text
+  headers        Json?
+  retrievedAt    DateTime           @default(now())
+
+  // Relations
+  verification   OnlineVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+
+  @@index([verificationId])
+}
+
+model OnlineListingField {
+  id              String             @id @default(cuid())
+  verificationId  String
+  fieldName       String             // e.g. "mrp", "net_quantity", "manufacturer", "country_of_origin"
+  rawValue        String?
+  normalizedValue String?
+  confidence      Float?             @default(1.0)
+  source          String?            // e.g. "json_ld", "meta_tag", "dom", "ai_assist"
+  createdAt       DateTime           @default(now())
+
+  // Relations
+  verification    OnlineVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+
+  @@index([verificationId])
+  @@index([fieldName])
+}
+
+model OnlineDiscrepancy {
+  id                 String             @id @default(cuid())
+  verificationId     String
+  fieldName          String
+  discrepancyType    String             // PRICE_MISMATCH, QUANTITY_MISMATCH, ORIGIN_MISMATCH, etc.
+  severity           ViolationSeverity  @default(MEDIUM)
+  physicalValue      String?
+  onlineValue        String?
+  discrepancyRatio   Float?
+  message            String
+  isStatutoryConcern Boolean            @default(false)
+  statutoryReference String?
+  createdAt          DateTime           @default(now())
+
+  // Relations
+  verification       OnlineVerification @relation(fields: [verificationId], references: [id], onDelete: Cascade)
+  evidenceItems      Evidence[]
+
+  @@index([verificationId])
+  @@index([discrepancyType])
+}
+
+// ─────────────────────────────────────────────────────────────
+// LEGAL RULE ENGINE (schema ready, data added Phase 3)
+// ─────────────────────────────────────────────────────────────
+
+model ProductCategory {
+  id          String  @id @default(cuid())
+  name        String  @unique
+  description String?
+  parentId    String?
+
+  // Relations
+  parent   ProductCategory?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children ProductCategory[] @relation("CategoryHierarchy")
+  rules    LegalRule[]
+}
+
+model LegalRule {
+  id                  String    @id @default(cuid())
+  ruleNumber          String    @unique // e.g. "Rule 6", "Rule 7(1)"
+  title               String
+  requirement         String    // plain text description of requirement
+  applicability       String?   // plain text — which products/scenarios
+  productCategoryId   String?
+  conditions          Json?     // structured conditions for rule engine
+  exceptions          Json?     // structured exceptions
+  evidenceRequirement String?   // what evidence is needed
+  sourceDocument      String    // e.g. "Legal Metrology (Packaged Commodities) Rules, 2011"
+  sourceReference     String?   // section/page reference
+  isActive            Boolean           @default(true)
+  defaultSeverity     ViolationSeverity @default(MEDIUM)
+  ruleCategory        String?           // e.g. "MANDATORY_DECLARATION", "DISPLAY_FORMAT"
+  effectiveDate       DateTime
+  expiryDate          DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  // Relations
+  productCategory  ProductCategory?  @relation(fields: [productCategoryId], references: [id])
+  versions         RuleVersion[]
+  complianceChecks ComplianceCheck[]
+  violations       Violation[]
+
+  @@index([ruleNumber])
+  @@index([isActive])
+  @@index([effectiveDate])
+}
+
+model RuleVersion {
+  id                String   @id @default(cuid())
+  ruleId            String
+  versionNumber     Int
+  changeDescription String
+  changedById       String
+  effectiveDate     DateTime
+  snapshot          Json     // complete rule snapshot at this version
+  createdAt         DateTime @default(now())
+
+  // Relations
+  rule      LegalRule @relation(fields: [ruleId], references: [id], onDelete: Cascade)
+  changedBy User      @relation(fields: [changedById], references: [id])
+
+  @@index([ruleId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// INSPECTIONS & COMPLIANCE
+// ─────────────────────────────────────────────────────────────
+
+model Inspection {
+  id        String           @id @default(cuid())
+  productId String?
+  scanId    String?
+  officerId String
+  status    InspectionStatus @default(DRAFT)
+  title     String?
+  notes     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  // Relations
+  product          Product?          @relation(fields: [productId], references: [id])
+  scan             ProductScan?      @relation(fields: [scanId], references: [id])
+  officer          User              @relation("OfficerInspections", fields: [officerId], references: [id])
+  complianceChecks ComplianceCheck[]
+  violations       Violation[]
+  evidence         Evidence[]
+  decision         OfficerDecision?
+  reports          Report[]
+  complaint        Complaint?
+  caseId           String?
+  case             RegulatoryCase?   @relation(fields: [caseId], references: [id])
+
+  @@index([officerId])
+  @@index([status])
+  @@index([caseId])
+}
+
+model ComplianceCheck {
+  id                String           @id @default(cuid())
+  inspectionId      String?
+  scanId            String?
+  ruleId            String
+  ruleVersionNumber Int?
+  status            ComplianceStatus @default(REQUIRES_REVIEW)
+  evaluationDetails Json?            // structured condition evaluation trace
+  evidence          Json?            // references to evidence IDs
+  officerNote       String?
+  checkedAt         DateTime         @default(now())
+
+  // Relations
+  inspection    Inspection?  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  scan          ProductScan? @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  rule          LegalRule    @relation(fields: [ruleId], references: [id])
+  evidenceItems Evidence[]
+
+  @@index([inspectionId])
+  @@index([scanId])
+  @@index([ruleId])
+}
+
+model Violation {
+  id                  String            @id @default(cuid())
+  inspectionId        String?
+  scanId              String?
+  ruleId              String
+  description         String
+  severity            ViolationSeverity @default(MEDIUM)
+  remediationGuidance String?           // statutory corrective action advice
+  evidenceIds         Json?             // array of Evidence IDs
+  detectedAt          DateTime          @default(now())
+
+  // Relations
+  inspection    Inspection?  @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  scan          ProductScan? @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  rule          LegalRule    @relation(fields: [ruleId], references: [id])
+  evidenceItems Evidence[]
+
+  @@index([inspectionId])
+  @@index([scanId])
+}
+
+model Evidence {
+  id                      String       @id @default(cuid())
+  inspectionId            String?
+  scanId                  String?
+  scanImageId             String?
+  extractedDeclarationId  String?
+  onlineVerificationId    String?
+  complianceCheckId       String?
+  violationId             String?
+  onlineDiscrepancyId     String?
+  createdById             String?
+  type                    EvidenceType
+  title                   String?
+  source                  String?
+  description             String?
+  confidence              Float?
+  metadata                Json?
+  createdAt               DateTime     @default(now())
+
+  // Relations
+  inspection           Inspection?           @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  scan                 ProductScan?          @relation(fields: [scanId], references: [id], onDelete: Cascade)
+  scanImage            ScanImage?            @relation(fields: [scanImageId], references: [id])
+  extractedDeclaration ExtractedDeclaration? @relation(fields: [extractedDeclarationId], references: [id])
+  onlineVerification   OnlineVerification?   @relation(fields: [onlineVerificationId], references: [id])
+  complianceCheck      ComplianceCheck?      @relation(fields: [complianceCheckId], references: [id], onDelete: SetNull)
+  violation            Violation?            @relation(fields: [violationId], references: [id], onDelete: SetNull)
+  onlineDiscrepancy    OnlineDiscrepancy?    @relation(fields: [onlineDiscrepancyId], references: [id], onDelete: SetNull)
+  createdBy            User?                 @relation("UserEvidence", fields: [createdById], references: [id])
+
+  @@index([inspectionId])
+  @@index([scanId])
+  @@index([complianceCheckId])
+  @@index([violationId])
+  @@index([onlineDiscrepancyId])
+  @@index([createdById])
+}
+
+model OfficerDecision {
+  id           String            @id @default(cuid())
+  inspectionId String            @unique
+  officerId    String
+  decision     AuthorityDecision
+  remarks      String?
+  decidedAt    DateTime          @default(now())
+
+  // Relations
+  inspection Inspection @relation(fields: [inspectionId], references: [id], onDelete: Cascade)
+  officer    User       @relation(fields: [officerId], references: [id])
+}
+
+// ─────────────────────────────────────────────────────────────
+// COMPLAINTS
+// ─────────────────────────────────────────────────────────────
+
+model Complaint {
+  id           String          @id @default(cuid())
+  consumerId   String
+  productId    String?
+  scanId       String?
+  inspectionId String?         @unique
+  title        String
+  description  String
+  status       ComplaintStatus @default(SUBMITTED)
+  complaintRef String          @unique @default(cuid()) // public-facing ID
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  // Relations
+  consumer   User              @relation("ConsumerComplaints", fields: [consumerId], references: [id])
+  product    Product?          @relation(fields: [productId], references: [id])
+  scan       ProductScan?      @relation(fields: [scanId], references: [id])
+  inspection Inspection?       @relation(fields: [inspectionId], references: [id])
+  updates    ComplaintUpdate[]
+  case       RegulatoryCase?
+
+  @@index([consumerId])
+  @@index([status])
+  @@index([complaintRef])
+}
+
+model ComplaintUpdate {
+  id             String          @id @default(cuid())
+  complaintId    String
+  updatedById    String
+  previousStatus ComplaintStatus
+  newStatus      ComplaintStatus
+  note           String?
+  updatedAt      DateTime        @default(now())
+
+  // Relations
+  complaint  Complaint @relation(fields: [complaintId], references: [id], onDelete: Cascade)
+  updatedBy  User      @relation(fields: [updatedById], references: [id])
+
+  @@index([complaintId])
+}
+
+// ─────────────────────────────────────────────────────────────
+// REPORTS
+// ─────────────────────────────────────────────────────────────
+
+model Report {
+  id           String       @id @default(cuid())
+  inspectionId String
+  generatedById String
+  format       ReportFormat
+  storageKey   String       // path in StorageService
+  reportRef    String       @unique @default(cuid()) // public-facing report ID
+  title        String?
+  fileSizeBytes Int?
+  metadata     Json?
+  generatedAt  DateTime     @default(now())
+
+  // Relations
+  inspection   Inspection @relation(fields: [inspectionId], references: [id])
+  generatedBy  User       @relation(fields: [generatedById], references: [id])
+
+  @@index([inspectionId])
+  @@index([reportRef])
+}
+
+// ─────────────────────────────────────────────────────────────
+// AUDIT LOG
+// ─────────────────────────────────────────────────────────────
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  userId     String?
+  action     AuditAction
+  entityType String?     // e.g. "Inspection", "Complaint", "LegalRule"
+  entityId   String?
+  metadata   Json?       // additional context
+  ipAddress  String?
+  createdAt  DateTime    @default(now())
+
+  // Relations
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@index([action])
+  @@index([entityType, entityId])
+  @@index([createdAt])
+}
+
+// ─────────────────────────────────────────────────────────────
+// REGULATORY CASE MANAGEMENT (Phase 5A)
+// ─────────────────────────────────────────────────────────────
+
+model RegulatoryCase {
+  id                String       @id @default(cuid())
+  caseNumber        String       @unique @default(cuid())
+  title             String
+  description       String?      @db.Text
+  status            CaseStatus   @default(SUBMITTED)
+  priority          CasePriority @default(MEDIUM)
+  complaintId       String?      @unique
+  productScanId     String?
+  assignedOfficerId String?
+  createdById       String
+  resolutionNotes   String?      @db.Text
+  closedAt          DateTime?
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+
+  // Relations
+  complaint       Complaint?   @relation(fields: [complaintId], references: [id])
+  productScan     ProductScan? @relation(fields: [productScanId], references: [id])
+  assignedOfficer User?        @relation("AssignedOfficerCases", fields: [assignedOfficerId], references: [id])
+  createdBy       User         @relation("CreatedByCases", fields: [createdById], references: [id])
+  inspections     Inspection[]
+
+  @@index([caseNumber])
+  @@index([status])
+  @@index([priority])
+  @@index([assignedOfficerId])
+  @@index([complaintId])
+  @@index([productScanId])
+  @@index([createdAt])
+}
+

@@ -1,2 +1,5 @@
 export * from './types'
 export * from './bis-knowledge-service'
+export * from './intent-classifier'
+export * from './query-understanding'
+export * from './bis-assistant-service'

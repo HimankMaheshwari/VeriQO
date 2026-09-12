@@ -697,3 +697,29 @@ model RegulatoryCase {
   @@index([createdAt])
 }
 
+// ─────────────────────────────────────────────────────────────
+// BIS STANDARDS REGISTRY (PS107)
+// ─────────────────────────────────────────────────────────────
+
+model BisStandard {
+  id                  String    @id @default(cuid())
+  standardNumber      String    @unique // e.g. "IS 14543", "IS 10500"
+  title               String
+  description         String?   @db.Text
+  category            String
+  productCategory     String?
+  isMandatory         Boolean   @default(false)
+  qcoReference        String?   // Quality Control Order notification reference
+  effectiveDate       DateTime?
+  certificationScheme String?   // e.g. "ISI", "CRS", "Hallmarking"
+  keyRequirements     Json?     // Technical specs, test parameters, quality limits
+  recognizedLabs      Json?     // List of certified testing laboratories
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([standardNumber])
+  @@index([category])
+  @@index([isMandatory])
+  @@index([productCategory])
+}
+

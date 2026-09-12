@@ -2,12 +2,13 @@ import React from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { Button } from '@/components/ui/Button'
-import { Bot, Sparkles, Send, ShieldAlert, Scale, ClipboardCheck, ArrowRight } from 'lucide-react'
+import { AssistantChatContainer } from '@/components/assistant/AssistantChatContainer'
+import { Scale, ShieldAlert, FileText, CheckSquare, BookOpen } from 'lucide-react'
 
 export const metadata = {
   title: 'Standards Enforcement Copilot | VeriQO Authority',
-  description: 'Authority technical assistant for BIS standard clause interpretation, mandatory QCO enforcement, and inspection checklists.',
+  description:
+    'Technical AI copilot for BIS standard clause interpretation, mandatory QCO enforcement, sampling protocols, and inspection checklists.',
 }
 
 export default function AuthorityAssistantPage() {
@@ -28,28 +29,6 @@ export default function AuthorityAssistantPage() {
         }
       />
 
-      {/* Advisory Safeguard Notice */}
-      <div
-        style={{
-          display: 'flex',
-          gap: 12,
-          padding: 'var(--space-4)',
-          background: 'rgba(245, 158, 11, 0.08)',
-          border: '1px solid rgba(245, 158, 11, 0.25)',
-          borderRadius: 'var(--radius-lg)',
-          marginBottom: 'var(--space-6)',
-          fontSize: 'var(--text-sm)',
-          color: 'var(--color-warning-dark)',
-          lineHeight: 1.5,
-        }}
-      >
-        <ShieldAlert size={20} style={{ color: 'var(--color-warning)', flexShrink: 0, marginTop: 2 }} />
-        <div>
-          <strong>Statutory Officer Safeguard:</strong> The Standards Copilot provides clause references and technical explanations.
-          All formal regulatory decisions, search warrants, compound notices, and inspection reports remain subject to authorized officer review under the BIS Act, 2016 and Legal Metrology Act, 2009.
-        </div>
-      </div>
-
       <div
         style={{
           display: 'grid',
@@ -58,147 +37,69 @@ export default function AuthorityAssistantPage() {
           alignItems: 'start',
         }}
       >
-        {/* Chat / Copilot Shell */}
-        <Card style={{ minHeight: 480, display: 'flex', flexDirection: 'column' }}>
-          <CardHeader style={{ borderBottom: '1px solid var(--border-default)' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <div
-                style={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: 'var(--radius-md)',
-                  background: 'linear-gradient(135deg, var(--brand-700), var(--brand-900))',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Scale size={16} color="white" />
-              </div>
-              <CardTitle style={{ fontSize: 'var(--text-base)' }}>Technical Regulatory Consultation</CardTitle>
-            </div>
-          </CardHeader>
+        {/* Left Column: Interactive Officer Copilot Chat Container */}
+        <div>
+          <AssistantChatContainer
+            mode="authority"
+            headerTitle="Standards Enforcement Copilot"
+            headerDescription="Technical Officer Consultation for Mandatory QCOs & Clause Checks"
+          />
+        </div>
 
-          <CardBody style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: 'var(--space-6)' }}>
-            {/* Welcome message */}
-            <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'flex-start', marginBottom: 'var(--space-6)' }}>
-              <div
-                style={{
-                  width: 36,
-                  height: 36,
-                  borderRadius: 'var(--radius-full)',
-                  background: 'var(--brand-900)',
-                  border: '1px solid var(--brand-500)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Bot size={20} style={{ color: 'var(--brand-400)' }} />
-              </div>
-              <div
-                style={{
-                  background: 'var(--bg-elevated)',
-                  border: '1px solid var(--border-default)',
-                  borderRadius: 'var(--radius-lg)',
-                  padding: 'var(--space-4)',
-                  maxWidth: '85%',
-                }}
-              >
-                <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--brand-300)', marginBottom: 4 }}>
-                  Officer Technical Copilot
-                </div>
-                <p style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', margin: 0, lineHeight: 1.6 }}>
-                  Welcome Officer. Query any technical parameter, mandatory Quality Control Order (QCO) gazette date, sampling methodology, or testing laboratory recognition for commodities under inspection.
-                </p>
-              </div>
-            </div>
-
-            {/* Officer Quick Checklists */}
-            <div style={{ marginBottom: 'var(--space-6)' }}>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginBottom: 'var(--space-3)', fontWeight: 600, textTransform: 'uppercase' }}>
-                Officer Technical Actions
-              </div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 'var(--space-3)' }}>
-                {[
-                  { title: 'Check Mandatory QCO Status', query: 'Is this commodity under a mandatory Quality Control Order (QCO) requiring mandatory ISI mark?' },
-                  { title: 'Standard Sampling Procedure', query: 'What is the statutory lot size and sampling protocol specified under the relevant IS standard?' },
-                  { title: 'Testing Tolerance Thresholds', query: 'What are the permissible technical deviations and tolerances before an item is declared non-compliant?' },
-                  { title: 'Draft Statutory Seizure Notice', query: 'Generate standard reference points for a notice under Section 16/17 of the BIS Act 2016.' },
-                ].map((item) => (
-                  <div
-                    key={item.title}
-                    className="hover-card"
-                    style={{
-                      padding: 'var(--space-3) var(--space-4)',
-                      background: 'var(--bg-surface)',
-                      border: '1px solid var(--border-default)',
-                      borderRadius: 'var(--radius-md)',
-                      cursor: 'pointer',
-                    }}
-                  >
-                    <div style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--brand-400)', marginBottom: 2 }}>
-                      {item.title}
-                    </div>
-                    <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 0, lineHeight: 1.4 }}>
-                      {item.query}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Query Input */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                padding: 'var(--space-2)',
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-strong)',
-                borderRadius: 'var(--radius-lg)',
-              }}
-            >
-              <input
-                type="text"
-                placeholder="Ask technical regulatory query (e.g. Mandatory QCO notification date for footwear)..."
-                style={{
-                  flex: 1,
-                  background: 'transparent',
-                  border: 'none',
-                  outline: 'none',
-                  color: 'var(--text-primary)',
-                  fontSize: 'var(--text-sm)',
-                  padding: '8px 12px',
-                }}
-              />
-              <Button variant="primary" size="sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-                <Send size={14} /> Consult
-              </Button>
-            </div>
-          </CardBody>
-        </Card>
-
-        {/* Right Column: Statutory Links */}
+        {/* Right Column: Statutory References & Officer Inspection Guidance */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
           <Card>
             <CardHeader>
-              <CardTitle style={{ fontSize: 'var(--text-sm)' }}>Active Statutory Orders</CardTitle>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Scale size={16} style={{ color: 'var(--color-warning)' }} />
+                <CardTitle style={{ fontSize: 'var(--text-sm)' }}>Active Statutory Regimes</CardTitle>
+              </div>
             </CardHeader>
-            <CardBody style={{ display: 'flex', flexDirection: 'column', gap: 10, fontSize: 'var(--text-xs)' }}>
+            <CardBody style={{ display: 'flex', flexDirection: 'column', gap: 12, fontSize: 'var(--text-xs)' }}>
               <div>
                 <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Bureau of Indian Standards Act, 2016</div>
-                <div style={{ color: 'var(--text-muted)' }}>Act No. 11 of 2016 · Conformity Assessment Regulations</div>
+                <div style={{ color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                  Act No. 11 of 2016 · Empowers officers under Sections 16, 17, and 29 for inspection, seizure, and penalty enforcement.
+                </div>
               </div>
               <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 8 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Quality Control Orders (QCO)</div>
-                <div style={{ color: 'var(--text-muted)' }}>Orders issued by DPIIT, Ministry of Consumer Affairs, MeitY</div>
+                <div style={{ color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                  Mandatory orders issued by DPIIT, Ministry of Consumer Affairs, MeitY, and Ministry of Steel.
+                </div>
               </div>
               <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: 8 }}>
                 <div style={{ fontWeight: 600, color: 'var(--text-primary)' }}>Hallmarking of Gold Jewellery Order</div>
-                <div style={{ color: 'var(--text-muted)' }}>Mandatory hallmarking across 343+ notified districts</div>
+                <div style={{ color: 'var(--text-muted)', lineHeight: 1.4 }}>
+                  Compulsory 3-mark hallmarking across 343+ designated districts under S.O. 50(E).
+                </div>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <CheckSquare size={16} style={{ color: 'var(--brand-400)' }} />
+                <CardTitle style={{ fontSize: 'var(--text-sm)' }}>Officer Checklist Workflow</CardTitle>
+              </div>
+            </CardHeader>
+            <CardBody style={{ display: 'flex', flexDirection: 'column', gap: 8, fontSize: 'var(--text-xs)', color: 'var(--text-secondary)' }}>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <strong style={{ color: 'var(--brand-300)' }}>1.</strong>
+                <span>Check product label for valid ISI / CRS mark and CM/L or R-number.</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <strong style={{ color: 'var(--brand-300)' }}>2.</strong>
+                <span>Verify if commodity falls under mandatory Central QCO enforcement.</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <strong style={{ color: 'var(--brand-300)' }}>3.</strong>
+                <span>Draw test lots per standard sampling scale (sealed composite sample).</span>
+              </div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <strong style={{ color: 'var(--brand-300)' }}>4.</strong>
+                <span>Dispatch to NABL-accredited or BIS-recognized referral laboratory.</span>
               </div>
             </CardBody>
           </Card>

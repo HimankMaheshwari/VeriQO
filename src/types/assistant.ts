@@ -112,3 +112,85 @@ export const STARTER_PROMPTS: SuggestedPrompt[] = [
     badgeText: 'Consumer Rights',
   },
 ]
+
+// ── Extended PS107 Assistant Contracts ──────────────────────────
+
+export type AssistantMode = 'consumer' | 'authority'
+
+export interface StandardContext {
+  standardNumber: string      // e.g. "IS 14543:2016"
+  title: string               // e.g. "Packaged Drinking Water"
+  category?: string           // e.g. "Food & Agriculture"
+  qcoNotificationNumber?: string
+  isMandatoryQco?: boolean
+}
+
+export interface ProductContext {
+  productName: string
+  productDescription: string
+  intendedUseCategory?: string
+}
+
+export interface AssistantSource {
+  id: string
+  documentTitle: string       // e.g. "IS 14543:2016 Packaged Drinking Water Specification"
+  standardNumber: string      // e.g. "IS 14543:2016"
+  clauseReference: string     // e.g. "Clause 4.1 & Clause 6.1"
+  excerpt: string             // Authentic statutory/specification excerpt
+  sourceUrl?: string          // External BIS standards link or gazette
+  isMandatoryQco: boolean
+  relevanceScore?: number     // 0-100 advisory confidence score
+}
+
+export interface AssistantEvidence {
+  matchedProductDescription?: string
+  relevantKeywords: string[]
+  sources: AssistantSource[]
+  contextConsidered: string
+  confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW'
+  advisoryNote?: string
+}
+
+export interface AssistantMessage {
+  id: string
+  role: MessageRole
+  content: string
+  timestamp: string
+  status?: MessageStatus
+  evidence?: AssistantEvidence
+  standardContext?: StandardContext
+  productContext?: ProductContext
+  errorMessage?: string
+}
+
+export interface AssistantConversation {
+  id: string
+  title: string
+  mode: AssistantMode
+  createdAt: string
+  messages: AssistantMessage[]
+  standardContext?: StandardContext
+  productContext?: ProductContext
+}
+
+export interface AssistantRequest {
+  query: string
+  mode: AssistantMode
+  conversationId: string
+  standardContext?: StandardContext
+  productContext?: ProductContext
+  language?: string
+}
+
+export interface AssistantResponse {
+  messageId: string
+  content: string
+  evidence?: AssistantEvidence
+  timestamp: string
+}
+
+export interface AssistantService {
+  sendMessage(request: AssistantRequest): Promise<AssistantResponse>
+  getInitialWelcomeMessage(mode: AssistantMode, standardContext?: StandardContext): AssistantMessage
+  getSuggestedPrompts(mode: AssistantMode, standardContext?: StandardContext): SuggestedPrompt[]
+}

@@ -4,7 +4,7 @@ import type {
   ExtractedDeclarationItem,
   ProductIdentificationResult,
 } from './types'
-import { MANDATORY_DECLARATION_FIELDS } from './types'
+import { MANDATORY_DECLARATION_FIELDS, BIS_DECLARATION_FIELDS } from './types'
 import type { DetectionStatus } from '@prisma/client'
 
 export class HeuristicAnalysisProvider implements ProductAnalysisService {
@@ -38,15 +38,30 @@ export class HeuristicAnalysisProvider implements ProductAnalysisService {
           confidence: 0,
           status: 'FAILED',
         },
-        declarations: MANDATORY_DECLARATION_FIELDS.map((spec) => ({
-          fieldName: spec.fieldName,
-          label: spec.label,
-          rawValue: null,
-          normalizedValue: null,
-          confidence: 0,
-          sourceText: null,
-          detectionStatus: 'NOT_DETECTED' as DetectionStatus,
-        })),
+        declarations: [
+          ...MANDATORY_DECLARATION_FIELDS.map((spec) => ({
+            fieldName: spec.fieldName,
+            label: spec.label,
+            rawValue: null,
+            normalizedValue: null,
+            confidence: 0,
+            sourceText: null,
+            detectionStatus: 'NOT_DETECTED' as DetectionStatus,
+          })),
+          ...BIS_DECLARATION_FIELDS.map((spec) => ({
+            fieldName: spec.fieldName,
+            label: spec.label,
+            rawValue: null,
+            normalizedValue: null,
+            confidence: 0,
+            sourceText: null,
+            detectionStatus: 'NOT_DETECTED' as DetectionStatus,
+          })),
+        ],
+        isi_mark: null,
+        cml_number: null,
+        hallmark_huid: null,
+        crs_registration_number: null,
       }
     }
 
@@ -83,6 +98,44 @@ export class HeuristicAnalysisProvider implements ProductAnalysisService {
     const uspMatch = cleanText.match(
       /(?:USP|U\.S\.P\.|Unit\s*Sale\s*Price)[\s:.-]*(?:₹|Rs\.?|INR)?\s*([0-9,]+(?:\s*\.\s*[0-9]{1,4})?)\s*(?:\/|\s*per\s*)([a-zA-Z]+)|(?:₹|Rs\.?)\s*([0-9]+(?:\s*\.\s*[0-9]{1,2})?)\s*\/\s*(ml|l|g|kg|piece|unit|item|cm|m)\b/i
     )
+
+    // ── BIS Certification Pattern Extractors ──────────────────────────────
+    // CM/L: CM/L followed by optional hyphen/spaces and a numeric license value
+    const cmlMatch = cleanText.match(
+      /(?:CM\s*\/\s*L|CML)[\s:.-]*([0-9]{6,12})\b/i
+    )
+
+    // CRS: R- followed by an 8-digit registration number
+    const crsMatch = cleanText.match(
+      /\b(R\s*-\s*([0-9]{8}))\b/i
+    )
+
+    // Hallmark: 6-character HUID-style alphanumeric identifier, ONLY when surrounding text/context indicates hallmark/HUID
+    const hasHallmarkContext = /\b(?:HUID|HALLMARK(?:ED|ING)?)\b/i.test(cleanText)
+    let hallmarkMatch: RegExpMatchArray | null = null
+    if (hasHallmarkContext) {
+      const explicitHuidMatch =
+        cleanText.match(
+          /(?:HUID|HALLMARK(?:ED|ING)?)(?:[\s:.-]*(?:NO\.?|NUMBER|CODE|ID|TAG|IS)?)[\s:.-]+([A-Za-z0-9]{6})\b/i
+        ) ||
+        cleanText.match(/\b([A-Za-z0-9]{6})[\s:.-]+HUID\b/i)
+      if (explicitHuidMatch) {
+        const candidate = explicitHuidMatch[1].toUpperCase()
+        const STOP_WORDS = new Set(['NUMBER', 'PURITY', 'SILVER', 'YELLOW', 'GOLDEN', 'JEWELS'])
+        if (!STOP_WORDS.has(candidate)) {
+          hallmarkMatch = explicitHuidMatch
+        }
+      }
+    }
+
+    // ISI: Detect presence of an ISI/BIS mark from text/context.
+    // Do NOT claim certification merely because the word "BIS" appears.
+    const explicitIsiMatch = cleanText.match(
+      /\b(?:ISI\s*MARK(?:ED)?|ISI\s*CERTIF(?:IED|ICATION)|ISI\s*STANDARDS?|IS\s*\/\s*ISO\s*[0-9]+)\b/i
+    )
+    const isiWithCmlMatch =
+      cmlMatch && /\bISI\b/i.test(cleanText) ? cleanText.match(/\bISI\b/i) : null
+    const isiMatch = explicitIsiMatch || isiWithCmlMatch
 
     // ── 2. Product Name & Brand Heuristics ─────────────────────────────────
     let detectedBrand: string | null = null
@@ -229,9 +282,33 @@ export class HeuristicAnalysisProvider implements ProductAnalysisService {
         source: batchMatch ? batchMatch[0].trim() : null,
         conf: batchMatch ? 0.9 : 0,
       },
+      isi_mark: {
+        raw: isiMatch ? (isiMatch[0] || 'ISI Mark').trim() : null,
+        norm: isiMatch ? 'ISI_STANDARD_MARK' : null,
+        source: isiMatch ? isiMatch[0].trim() : null,
+        conf: isiMatch ? 0.92 : 0,
+      },
+      cml_number: {
+        raw: cmlMatch ? cmlMatch[1].trim() : null,
+        norm: cmlMatch ? cmlMatch[1].trim() : null,
+        source: cmlMatch ? cmlMatch[0].trim() : null,
+        conf: cmlMatch ? 0.95 : 0,
+      },
+      hallmark_huid: {
+        raw: hallmarkMatch ? hallmarkMatch[1].toUpperCase().trim() : null,
+        norm: hallmarkMatch ? hallmarkMatch[1].toUpperCase().trim() : null,
+        source: hallmarkMatch ? hallmarkMatch[0].trim() : null,
+        conf: hallmarkMatch ? 0.92 : 0,
+      },
+      crs_registration_number: {
+        raw: crsMatch ? `R-${crsMatch[2].trim()}` : null,
+        norm: crsMatch ? `R-${crsMatch[2].trim()}` : null,
+        source: crsMatch ? crsMatch[0].trim() : null,
+        conf: crsMatch ? 0.95 : 0,
+      },
     }
 
-    const declarations: ExtractedDeclarationItem[] = MANDATORY_DECLARATION_FIELDS.map((spec) => {
+    const mandatoryDeclarations: ExtractedDeclarationItem[] = MANDATORY_DECLARATION_FIELDS.map((spec) => {
       const data = extractedMap[spec.fieldName]
       const isDetected = Boolean(data && data.raw)
       const status: DetectionStatus = isDetected ? 'DETECTED' : 'NOT_DETECTED'
@@ -247,9 +324,34 @@ export class HeuristicAnalysisProvider implements ProductAnalysisService {
       }
     })
 
+    const bisItems: Record<string, ExtractedDeclarationItem> = {}
+    for (const spec of BIS_DECLARATION_FIELDS) {
+      const data = extractedMap[spec.fieldName]
+      const isDetected = Boolean(data && data.raw)
+      const status: DetectionStatus = isDetected ? 'DETECTED' : 'NOT_DETECTED'
+      bisItems[spec.fieldName] = {
+        fieldName: spec.fieldName,
+        label: spec.label,
+        rawValue: data?.raw || null,
+        normalizedValue: data?.norm || null,
+        confidence: data?.conf || 0,
+        sourceText: data?.source || null,
+        detectionStatus: status,
+      }
+    }
+
+    const declarations: ExtractedDeclarationItem[] = [
+      ...mandatoryDeclarations,
+      ...BIS_DECLARATION_FIELDS.map((spec) => bisItems[spec.fieldName]),
+    ]
+
     return {
       product,
       declarations,
+      isi_mark: bisItems.isi_mark.detectionStatus === 'DETECTED' ? bisItems.isi_mark : null,
+      cml_number: bisItems.cml_number.detectionStatus === 'DETECTED' ? bisItems.cml_number : null,
+      hallmark_huid: bisItems.hallmark_huid.detectionStatus === 'DETECTED' ? bisItems.hallmark_huid : null,
+      crs_registration_number: bisItems.crs_registration_number.detectionStatus === 'DETECTED' ? bisItems.crs_registration_number : null,
     }
   }
 }

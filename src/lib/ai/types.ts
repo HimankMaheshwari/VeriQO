@@ -22,6 +22,10 @@ export interface ProductIdentificationResult {
 export interface AnalysisResult {
   product: ProductIdentificationResult
   declarations: ExtractedDeclarationItem[]
+  isi_mark?: ExtractedDeclarationItem | null
+  cml_number?: ExtractedDeclarationItem | null
+  hallmark_huid?: ExtractedDeclarationItem | null
+  crs_registration_number?: ExtractedDeclarationItem | null
 }
 
 export interface ProductAnalysisService {
@@ -49,3 +53,10 @@ export const MANDATORY_DECLARATION_FIELDS = [
   { fieldName: 'country_of_origin', label: 'Country of Origin' },
   { fieldName: 'batch_number', label: 'Batch / Lot Number' },
 ]
+
+export const BIS_DECLARATION_FIELDS = [
+  { fieldName: 'isi_mark', label: 'ISI / BIS Standard Mark' },
+  { fieldName: 'cml_number', label: 'BIS CM/L License Number' },
+  { fieldName: 'hallmark_huid', label: 'Hallmark Unique Identification (HUID)' },
+  { fieldName: 'crs_registration_number', label: 'Compulsory Registration Scheme (CRS) Number' },
+] as const

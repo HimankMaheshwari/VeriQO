@@ -5,7 +5,7 @@ import type {
   ExtractedDeclarationItem,
   ProductIdentificationResult,
 } from './types'
-import { MANDATORY_DECLARATION_FIELDS } from './types'
+import { MANDATORY_DECLARATION_FIELDS, BIS_DECLARATION_FIELDS } from './types'
 import { HeuristicAnalysisProvider } from './heuristic-analyzer'
 import type { DetectionStatus } from '@prisma/client'
 
@@ -45,23 +45,37 @@ export class GeminiAnalysisProvider implements ProductAnalysisService {
       (f) => `  - "${f.fieldName}": ${f.label}`
     ).join('\n')
 
+    const bisListing = BIS_DECLARATION_FIELDS.map(
+      (f) => `  - "${f.fieldName}": ${f.label}`
+    ).join('\n')
+
     const prompt = `You are an expert packaging inspection and text extraction engine for packaged commodities sold in India under the Legal Metrology Act, 2009 and Legal Metrology (Packaged Commodities) Rules, 2011.
 
 TASK:
 1. Identify the packaged product (Product Name, Brand, General Category, Likely Manufacturer, Confidence score 0.0-1.0, Identification Status: IDENTIFIED | UNCERTAIN | FAILED).
 2. Extract visible package declarations for all mandatory Indian packaging fields.
+3. Extract visible Bureau of Indian Standards (BIS) certification identifiers if clearly present on the packaging.
 
 MANDATORY DECLARATION FIELDS:
 ${fieldsListing}
 
+OPTIONAL BIS CERTIFICATION IDENTIFIERS:
+${bisListing}
+
 MANDATORY SAFETY & AUDITING RULES:
 - DO NOT INVENT, FABRICATE, OR GUESS MISSING VALUES.
-- For each of the mandatory declaration fields listed above, return an object in the "declarations" array with its exact "fieldName".
-- If a declaration is not clearly visible in the text or images, set its rawValue to null, normalizedValue to null, sourceText to null, confidence to 0, and detectionStatus to "NOT_DETECTED".
+- For each of the mandatory declaration fields and optional BIS fields listed above, return an object in the "declarations" array with its exact "fieldName".
+- If a declaration or identifier is not clearly visible in the text or images, set its rawValue to null, normalizedValue to null, sourceText to null, confidence to 0, and detectionStatus to "NOT_DETECTED".
 - If text is present and legible, extract the detected value into "rawValue", a clean normalized version into "normalizedValue", the verbatim snippet from the package into "sourceText", a confidence score (0.0 - 1.0), and set detectionStatus to "DETECTED".
 - If text is cut off or ambiguous, set detectionStatus to "UNCLEAR".
 - For "unit_sale_price": Look across all surfaces, including top seal, coding area, or main panel (e.g. "₹ 0.15/ml", "USP ₹ 0.20/g", "Rs. 1.00/unit"). If the main panel has a pointer like "For USP... See Top/Seal", extract the actual unit price printed on the seal/coding area into rawValue/normalizedValue.
 - For "mrp": Ensure sourceText preserves the complete verbatim phrase (e.g. "*MRP ₹ 20.00 (Incl. of all taxes).").
+- BIS IDENTIFIER RULES:
+  * NEVER invent, fabricate, or guess a BIS identifier.
+  * For "isi_mark": Detect presence of ISI mark text or certification stamp. Do NOT claim certification merely because the word "BIS" appears without standard mark context.
+  * For "cml_number": Extract the numeric BIS CM/L license number following "CM/L" or "CML" (e.g. "123456789" from "CM/L-123456789"). Normalize to digits.
+  * For "crs_registration_number": Extract the Compulsory Registration Scheme number in format "R-XXXXXXXX" (R- followed by 8 digits). Normalize to canonical format e.g. "R-12345678".
+  * For "hallmark_huid": Extract the 6-character alphanumeric Hallmark Unique Identification code ONLY when surrounding text or context indicates hallmarking/HUID (e.g. "HUID ABC123", "Hallmark HUID: ABC123"). Do NOT extract generic 6-character strings as HUID without hallmarking context.
 - DO NOT DECIDE LEGAL COMPLIANCE. Your role is purely factual: "What text appears on this packaging?" and "What product does this appear to be?".
 
 INPUT RAW OCR TEXT:
@@ -81,7 +95,7 @@ REQUIRED JSON OUTPUT FORMAT:
   },
   "declarations": [
     {
-      "fieldName": "product_name | brand | manufacturer | packer | importer | address | net_quantity | mrp | unit_sale_price | date_of_manufacture | date_of_packing | best_before | customer_care | country_of_origin | batch_number",
+      "fieldName": "product_name | brand | manufacturer | packer | importer | address | net_quantity | mrp | unit_sale_price | date_of_manufacture | date_of_packing | best_before | customer_care | country_of_origin | batch_number | isi_mark | cml_number | hallmark_huid | crs_registration_number",
       "rawValue": "string or null",
       "normalizedValue": "string or null",
       "confidence": 0.95,
@@ -161,7 +175,15 @@ REQUIRED JSON OUTPUT FORMAT:
       })
     }
 
-    const declarations: ExtractedDeclarationItem[] = MANDATORY_DECLARATION_FIELDS.map((spec) => {
+    const validStatuses: DetectionStatus[] = [
+      'DETECTED',
+      'NOT_DETECTED',
+      'UNCLEAR',
+      'NOT_APPLICABLE',
+      'REQUIRES_REVIEW',
+    ]
+
+    const mandatoryDeclarations: ExtractedDeclarationItem[] = MANDATORY_DECLARATION_FIELDS.map((spec) => {
       const item = fieldMap.get(spec.fieldName)
       if (!item || !item.rawValue) {
         return {
@@ -175,13 +197,6 @@ REQUIRED JSON OUTPUT FORMAT:
         }
       }
 
-      const validStatuses: DetectionStatus[] = [
-        'DETECTED',
-        'NOT_DETECTED',
-        'UNCLEAR',
-        'NOT_APPLICABLE',
-        'REQUIRES_REVIEW',
-      ]
       const status = validStatuses.includes(item.detectionStatus)
         ? (item.detectionStatus as DetectionStatus)
         : 'DETECTED'
@@ -197,9 +212,48 @@ REQUIRED JSON OUTPUT FORMAT:
       }
     })
 
+    const bisMap: Record<string, ExtractedDeclarationItem> = {}
+    for (const spec of BIS_DECLARATION_FIELDS) {
+      const item = fieldMap.get(spec.fieldName)
+      if (!item || !item.rawValue) {
+        bisMap[spec.fieldName] = {
+          fieldName: spec.fieldName,
+          label: spec.label,
+          rawValue: null,
+          normalizedValue: null,
+          confidence: 0,
+          sourceText: null,
+          detectionStatus: 'NOT_DETECTED' as DetectionStatus,
+        }
+      } else {
+        const status = validStatuses.includes(item.detectionStatus)
+          ? (item.detectionStatus as DetectionStatus)
+          : 'DETECTED'
+
+        bisMap[spec.fieldName] = {
+          fieldName: spec.fieldName,
+          label: spec.label,
+          rawValue: String(item.rawValue || '').trim(),
+          normalizedValue: item.normalizedValue ? String(item.normalizedValue).trim() : null,
+          confidence: typeof item.confidence === 'number' ? Math.min(Math.max(item.confidence, 0), 1) : 0.85,
+          sourceText: item.sourceText ? String(item.sourceText).trim() : null,
+          detectionStatus: status,
+        }
+      }
+    }
+
+    const declarations: ExtractedDeclarationItem[] = [
+      ...mandatoryDeclarations,
+      ...BIS_DECLARATION_FIELDS.map((spec) => bisMap[spec.fieldName]),
+    ]
+
     return {
       product: productResult,
       declarations,
+      isi_mark: bisMap.isi_mark.detectionStatus === 'DETECTED' ? bisMap.isi_mark : null,
+      cml_number: bisMap.cml_number.detectionStatus === 'DETECTED' ? bisMap.cml_number : null,
+      hallmark_huid: bisMap.hallmark_huid.detectionStatus === 'DETECTED' ? bisMap.hallmark_huid : null,
+      crs_registration_number: bisMap.crs_registration_number.detectionStatus === 'DETECTED' ? bisMap.crs_registration_number : null,
     }
   }
 }

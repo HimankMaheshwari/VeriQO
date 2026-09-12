@@ -468,21 +468,38 @@ export default function ScanDetailClient({ initialScan }: { initialScan: Seriali
         }}
       >
         {[
-          { step: '1', title: 'Scan Package', status: 'done' },
+          { step: '1', title: 'Scan Package', status: 'done', href: '/consumer/scan' },
           { step: '2', title: 'Compliance Findings', status: 'current' },
-          { step: '3', title: 'Related BIS Standards', status: 'next' },
-          { step: '4', title: 'BIS Assistant', status: 'next' },
+          {
+            step: '3',
+            title: 'Related BIS Standards',
+            status: 'next',
+            href: `/consumer/standards?q=${encodeURIComponent(productName)}&cat=${encodeURIComponent(
+              scan.identifiedCategory || ''
+            )}`,
+          },
+          {
+            step: '4',
+            title: 'BIS Assistant',
+            status: 'next',
+            href: `/consumer/assistant?productName=${encodeURIComponent(
+              productName
+            )}&productDesc=${encodeURIComponent(
+              scan.rawOcrText?.slice(0, 150) || productName
+            )}&cat=${encodeURIComponent(scan.identifiedCategory || '')}`,
+          },
           { step: '5', title: 'Authority Review', status: 'next' },
           { step: '6', title: 'Officer Verification', status: 'next' },
-        ].map((item, idx, arr) => (
-          <React.Fragment key={item.step}>
+        ].map((item, idx, arr) => {
+          const content = (
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
                 whiteSpace: 'nowrap',
-                opacity: item.status === 'next' ? 0.7 : 1,
+                opacity: item.status === 'next' ? 0.85 : 1,
+                cursor: item.href ? 'pointer' : 'default',
               }}
             >
               <div
@@ -521,19 +538,33 @@ export default function ScanDetailClient({ initialScan }: { initialScan: Seriali
                 style={{
                   fontSize: 'var(--text-xs)',
                   fontWeight: item.status === 'current' ? 'var(--font-semibold)' : 'var(--font-normal)',
-                  color: item.status === 'current' ? 'var(--text-primary)' : 'var(--text-muted)',
+                  color: item.status === 'current' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  textDecoration: item.href ? 'underline' : 'none',
+                  textUnderlineOffset: 3,
                 }}
               >
                 {item.title}
               </span>
             </div>
-            {idx < arr.length - 1 && (
-              <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', padding: '0 2px' }}>
-                →
-              </span>
-            )}
-          </React.Fragment>
-        ))}
+          )
+
+          return (
+            <React.Fragment key={item.step}>
+              {item.href ? (
+                <Link href={item.href} style={{ textDecoration: 'none' }}>
+                  {content}
+                </Link>
+              ) : (
+                content
+              )}
+              {idx < arr.length - 1 && (
+                <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', padding: '0 2px' }}>
+                  →
+                </span>
+              )}
+            </React.Fragment>
+          )
+        })}
       </div>
 
       {/* BIS Standards & Regulatory Intelligence Card (PS107 Bridge) */}

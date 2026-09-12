@@ -264,6 +264,11 @@ Under the **Bureau of Indian Standards (BIS)**, commodities in India are governe
     }
   }
 
+  if (request.language === 'hi') {
+    content += `\n\n---\n**हिंदी सारांश (Hindi Advisory Summary — डेमो अनुवाद):**\n` +
+      `उपरोक्त जानकारी भारतीय मानक ब्यूरो (BIS) एवं गुणवत्ता नियंत्रण आदेश (QCO) के प्रावधानों पर आधारित है। आधिकारिक कानूनी विनिर्देशों के लिए भारत के राजपत्र और आधिकारिक बीआईएस पोर्टल (services.bis.gov.in) को देखें।`
+  }
+
   // Construct structured mock advisory evidence
   const evidence: AssistantEvidence = {
     matchedProductDescription: prod
@@ -279,8 +284,9 @@ Under the **Bureau of Indian Standards (BIS)**, commodities in India are governe
       ? `User-Provided Product Context: ${prod.productName} [Demo Mock Context Binding]`
       : 'Indian Standards Demo Knowledge Base (SIH PS107 Typed Mock Repository)',
     confidenceLevel: 'HIGH',
-    advisoryNote:
-      '[DEMO / MOCK DATA] This response demonstrates the structured source-backed answer format for SIH PS107. Authentic BIS standard clauses, gazette orders, and conformity assessments will be provided by Parth’s AI/RAG pipeline and Himank’s backend API.',
+    advisoryNote: request.language === 'hi'
+      ? '[DEMO / MOCK DATA] बहुभाषी अनुवाद पूर्वावलोकन। आधिकारिक कानूनी विनिर्देश भारत के राजपत्र और आधिकारिक बीआईएस पोर्टल से मान्य हैं।'
+      : '[DEMO / MOCK DATA] This response demonstrates the structured source-backed answer format for SIH PS107. Authentic BIS standard clauses, gazette orders, and conformity assessments will be provided by Parth’s AI/RAG pipeline and Himank’s backend API.',
   }
 
   return { content, evidence }
@@ -304,8 +310,34 @@ export class MockAssistantService implements AssistantService {
     }
   }
 
-  public getInitialWelcomeMessage(mode: AssistantMode, standardContext?: StandardContext): AssistantMessage {
+  public getInitialWelcomeMessage(mode: AssistantMode, standardContext?: StandardContext, language?: string): AssistantMessage {
     const timestamp = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+
+    if (language === 'hi') {
+      if (standardContext) {
+        return {
+          id: 'welcome-std-hi',
+          role: 'assistant',
+          timestamp,
+          content: `नमस्ते! मैंने **${standardContext.standardNumber}** (${standardContext.title}) के लिए परामर्श संदर्भ लोड कर लिया है [डेमो मोड]।\n\nआप इस मानक के लिए परीक्षण विधियां, अनुमेय सहनशीलता, आईएसआई मार्क / सीआरएस प्रमाणन या मान्यता प्राप्त प्रयोगशालाओं के बारे में पूछ सकते हैं।`,
+          standardContext,
+          evidence: {
+            relevantKeywords: [standardContext.standardNumber, standardContext.category || 'Standards'],
+            sources: [],
+            contextConsidered: `भारतीय मानक संदर्भ: ${standardContext.standardNumber}`,
+            confidenceLevel: 'HIGH',
+            advisoryNote: '[डेमो डेटा] आधिकारिक विनिर्देशों के लिए भारत के राजपत्र को देखें।',
+          },
+        }
+      }
+
+      return {
+        id: 'welcome-consumer-hi',
+        role: 'assistant',
+        timestamp,
+        content: `नमस्ते! मैं स्मार्ट इंडिया हैकथॉन समस्या विवरण 107 के तहत **भारतीय मानक** और **बीआईएस विनियमों** के लिए आपका एआई सलाहकार हूँ [डेमो मोड]।\n\nआप मुझसे अपने उत्पाद के लिए लागू मानक, आईएसआई मार्क प्रमाणन प्रक्रिया (स्कीम I / स्कीम II), परीक्षण प्रयोगशालाओं या सोने की हॉलमार्किंग (HUID) के बारे में पूछ सकते हैं।`,
+      }
+    }
 
     if (standardContext) {
       return {
@@ -356,7 +388,77 @@ You can ask me questions about applicable standards for your product, certificat
     }
   }
 
-  public getSuggestedPrompts(mode: AssistantMode, standardContext?: StandardContext): SuggestedPrompt[] {
+  public getSuggestedPrompts(
+    mode: AssistantMode,
+    standardContext?: StandardContext,
+    language?: string
+  ): SuggestedPrompt[] {
+    if (language === 'hi') {
+      if (standardContext) {
+        return [
+          {
+            id: 'sp-hi-ctx-1',
+            category: 'standards',
+            title: 'परीक्षण विधियां एवं सहनशीलता',
+            prompt: `${standardContext.standardNumber} के तहत कौन सी परीक्षण विधियां और निर्धारित सहनशीलता लागू होती हैं?`,
+            badgeText: 'परीक्षण',
+          },
+          {
+            id: 'sp-hi-ctx-2',
+            category: 'standards',
+            title: 'अनिवार्य QCO आदेश',
+            prompt: `क्या ${standardContext.standardNumber} अनिवार्य गुणवत्ता नियंत्रण आदेश (QCO) के तहत आता है?`,
+            badgeText: 'QCO अधिदेश',
+          },
+          {
+            id: 'sp-hi-ctx-3',
+            category: 'schemes',
+            title: 'प्रमाणन चिह्नांकन',
+            prompt: `${standardContext.standardNumber} के लिए कौन सा बीआईएस प्रमाणन चिह्न और स्कीम लागू है?`,
+            badgeText: 'चिह्नांकन',
+          },
+          {
+            id: 'sp-hi-ctx-4',
+            category: 'testing',
+            title: 'मान्यता प्राप्त प्रयोगशालाएं',
+            prompt: `${standardContext.standardNumber} के लिए मान्यता प्राप्त प्रयोगशालाएं कहाँ हैं?`,
+            badgeText: 'लैब्स',
+          },
+        ]
+      }
+
+      return [
+        {
+          id: 'sp-hi-1',
+          category: 'standards',
+          title: 'लागू मानक की खोज',
+          prompt: 'मेरे उत्पाद पर कौन सा भारतीय मानक लागू हो सकता है?',
+          badgeText: 'मानक खोज',
+        },
+        {
+          id: 'sp-hi-2',
+          category: 'schemes',
+          title: 'बीआईएस प्रमाणन प्रक्रिया',
+          prompt: 'बीआईएस प्रमाणन प्रक्रिया क्या है और आईएसआई मार्क कैसे सत्यापित करें?',
+          badgeText: 'प्रमाणन',
+        },
+        {
+          id: 'sp-hi-3',
+          category: 'hallmarking',
+          title: 'स्वर्ण हॉलमार्किंग (HUID)',
+          prompt: 'सोने के आभूषणों पर 3 अनिवार्य हॉलमार्क चिह्न क्या हैं और 6 अंकों का HUID कैसे सत्यापित करें?',
+          badgeText: 'हॉलमार्क 22K',
+        },
+        {
+          id: 'sp-hi-4',
+          category: 'standards',
+          title: 'स्वैच्छिक मानक बनाम QCO',
+          prompt: 'स्वैच्छिक मानकों और अनिवार्य गुणवत्ता नियंत्रण आदेशों (QCO) में क्या अंतर है?',
+          badgeText: 'अधिदेश',
+        },
+      ]
+    }
+
     if (standardContext) {
       return [
         {

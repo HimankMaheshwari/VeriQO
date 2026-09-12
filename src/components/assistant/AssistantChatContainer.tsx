@@ -6,12 +6,14 @@ import {
   type AssistantMode,
   type StandardContext,
   type ProductContext,
+  SUPPORTED_LANGUAGES,
 } from '@/types/assistant'
 import { assistantService } from '@/services/assistant-service'
 import { MessageBubble } from '@/components/assistant/MessageBubble'
 import { ContextPillBar } from '@/components/assistant/ContextPillBar'
 import { ProductContextModal } from '@/components/assistant/ProductContextModal'
 import { SuggestedQuestionsGrid } from '@/components/assistant/SuggestedQuestionsGrid'
+import { VoiceInputBar } from '@/components/assistant/VoiceInputBar'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -28,6 +30,7 @@ import {
   Scale,
   Paperclip,
   CheckCircle2,
+  Globe,
 } from 'lucide-react'
 
 interface AssistantChatContainerProps {
@@ -54,6 +57,9 @@ export function AssistantChatContainer({
   )
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
 
+  const [language, setLanguage] = useState<string>('en')
+  const [isVoiceActive, setIsVoiceActive] = useState<boolean>(false)
+
   // Chat message states
   const [messages, setMessages] = useState<AssistantMessage[]>([])
   const [inputValue, setInputValue] = useState('')
@@ -65,14 +71,21 @@ export function AssistantChatContainer({
 
   // Initialize with mode-tailored welcome message
   useEffect(() => {
-    const welcome = assistantService.getInitialWelcomeMessage(mode, standardContext)
+    const welcome = assistantService.getInitialWelcomeMessage(mode, standardContext, language)
     setMessages([welcome])
-  }, [mode, standardContext])
+  }, [mode, standardContext, language])
 
   // Auto-scroll to bottom on message update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages, isLoading])
+
+  // Handle Language Change
+  const handleLanguageChange = (newLang: string) => {
+    setLanguage(newLang)
+    const welcome = assistantService.getInitialWelcomeMessage(mode, standardContext, newLang)
+    setMessages([welcome])
+  }
 
   // Handle Send Message
   const handleSendMessage = async (textToSend?: string) => {
@@ -103,6 +116,7 @@ export function AssistantChatContainer({
         conversationId: 'demo-thread-1',
         standardContext,
         productContext,
+        language,
       })
 
       const assistantMessage: AssistantMessage = {
@@ -122,10 +136,16 @@ export function AssistantChatContainer({
       const failedMessage: AssistantMessage = {
         id: `err-${Date.now()}`,
         role: 'assistant',
-        content: 'I encountered an issue processing this query against the Indian Standards repository.',
+        content:
+          language === 'hi'
+            ? 'भारतीय मानक रिपॉजिटरी के विरुद्ध इस प्रश्न को संसाधित करने में समस्या आई।'
+            : 'I encountered an issue processing this query against the Indian Standards repository.',
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
         status: 'error',
-        errorMessage: 'Connection to regulatory knowledge engine timed out. Please try again.',
+        errorMessage:
+          language === 'hi'
+            ? 'विनियमन ज्ञान इंजन से कनेक्शन समाप्त हो गया। कृपया पुनः प्रयास करें।'
+            : 'Connection to regulatory knowledge engine timed out. Please try again.',
       }
       setMessages((prev) => [...prev, failedMessage])
     } finally {
@@ -135,7 +155,6 @@ export function AssistantChatContainer({
 
   // Handle Retry
   const handleRetry = (failedMsg: AssistantMessage) => {
-    // Find the last user message
     const lastUserMsg = [...messages].reverse().find((m) => m.role === 'user')
     if (lastUserMsg) {
       handleSendMessage(lastUserMsg.content)
@@ -144,7 +163,7 @@ export function AssistantChatContainer({
 
   // Handle New / Clear Conversation
   const handleClearConversation = () => {
-    const welcome = assistantService.getInitialWelcomeMessage(mode, standardContext)
+    const welcome = assistantService.getInitialWelcomeMessage(mode, standardContext, language)
     setMessages([welcome])
     setInputValue('')
     setErrorMessage(null)
@@ -158,7 +177,7 @@ export function AssistantChatContainer({
     }
   }
 
-  const suggestedPrompts = assistantService.getSuggestedPrompts(mode, standardContext)
+  const suggestedPrompts = assistantService.getSuggestedPrompts(mode, standardContext, language)
   const isAuthority = mode === 'authority'
 
   return (
@@ -208,6 +227,47 @@ export function AssistantChatContainer({
         </div>
       )}
 
+      {/* Multilingual Advisory Notice when language === 'hi' */}
+      {language === 'hi' && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 8,
+            padding: 'var(--space-2) var(--space-4)',
+            background: 'rgba(234, 179, 8, 0.08)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-md)',
+            fontSize: 'var(--text-xs)',
+            color: 'var(--text-primary)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Globe size={15} style={{ color: 'var(--color-warning)' }} />
+            <span>
+              <strong>भाषा: हिन्दी सक्रिय (Hindi Mode Active): </strong>
+              एआई-आधारित बहुभाषी सलाहकार सहायता उपलब्ध है। आधिकारिक मानक मूल अंग्रेजी व हिन्दी राजपत्र से मान्य हैं।
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => handleLanguageChange('en')}
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: 'var(--brand-400)',
+              fontSize: '11px',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+            }}
+          >
+            Switch to English
+          </button>
+        </div>
+      )}
+
       {/* Main Chat Shell Card */}
       <Card style={{ minHeight: 600, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
         {/* Chat Card Header */}
@@ -249,7 +309,33 @@ export function AssistantChatContainer({
             </div>
           </div>
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            {/* Language Selector */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Globe size={14} style={{ color: 'var(--text-muted)' }} />
+              <select
+                value={language}
+                onChange={(e) => handleLanguageChange(e.target.value)}
+                aria-label="Select Assistant Language"
+                style={{
+                  background: 'var(--bg-elevated)',
+                  border: '1px solid var(--border-default)',
+                  borderRadius: 'var(--radius-md)',
+                  color: 'var(--text-primary)',
+                  fontSize: 'var(--text-xs)',
+                  padding: '3px 8px',
+                  cursor: 'pointer',
+                  outline: 'none',
+                }}
+              >
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <option key={lang.code} value={lang.code}>
+                    {lang.name} ({lang.nativeName})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <Badge variant={isAuthority ? 'warning' : 'info'} dot>
               {isAuthority ? 'Officer Mode' : 'Consumer Advisory'}
             </Badge>
@@ -269,6 +355,7 @@ export function AssistantChatContainer({
         <ContextPillBar
           standardContext={standardContext}
           productContext={productContext}
+          language={language}
           onRemoveStandard={() => setStandardContext(undefined)}
           onRemoveProduct={() => setProductContext(undefined)}
           onOpenProductModal={() => setIsProductModalOpen(true)}
@@ -311,12 +398,28 @@ export function AssistantChatContainer({
                 </div>
                 <div
                   style={{
-                    fontSize: 'var(--text-xs)',
-                    color: 'var(--text-muted)',
-                    fontStyle: 'italic',
+                    padding: 'var(--space-2) var(--space-4)',
+                    background: 'var(--bg-elevated)',
+                    border: '1px solid var(--border-default)',
+                    borderRadius: 'var(--radius-lg)',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 3,
                   }}
                 >
-                  Consulting Indian Standards repository and Quality Control Orders...
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-primary)', fontWeight: 500, display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <Sparkles size={13} style={{ color: 'var(--brand-400)' }} />
+                    <span>
+                      {language === 'hi'
+                        ? 'भारतीय मानक रिपॉजिटरी और QCO का विश्लेषण किया जा रहा है...'
+                        : 'Consulting Indian Standards repository and Quality Control Orders...'}
+                    </span>
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {language === 'hi'
+                      ? 'एआई सलाहकार मार्गदर्शन तैयार हो रहा है • आधिकारिक मानक मूल अंग्रेजी व हिन्दी राजपत्र से मान्य हैं।'
+                      : 'Synthesizing advisory guidance • Cross-referencing published specifications and lab testing requirements'}
+                  </div>
                 </div>
               </div>
             )}
@@ -330,7 +433,15 @@ export function AssistantChatContainer({
               <SuggestedQuestionsGrid
                 prompts={suggestedPrompts}
                 onSelectPrompt={(text) => handleSendMessage(text)}
-                title={standardContext ? `Targeted Queries for ${standardContext.standardNumber}` : 'Frequently Asked Regulatory Inquiries'}
+                title={
+                  standardContext
+                    ? language === 'hi'
+                      ? `${standardContext.standardNumber} के लिए लक्षित प्रश्न`
+                      : `Targeted Queries for ${standardContext.standardNumber}`
+                    : language === 'hi'
+                    ? 'अक्सर पूछे जाने वाले नियामक प्रश्न'
+                    : 'Frequently Asked Regulatory Inquiries'
+                }
               />
             </div>
           )}
@@ -344,6 +455,18 @@ export function AssistantChatContainer({
             borderTop: '1px solid var(--border-default)',
           }}
         >
+          {/* Voice Input Recording Bar */}
+          <VoiceInputBar
+            isActive={isVoiceActive}
+            onClose={() => setIsVoiceActive(false)}
+            onInsertTranscript={(transcript) => {
+              setInputValue(transcript)
+              setIsVoiceActive(false)
+              textareaRef.current?.focus()
+            }}
+            language={language}
+          />
+
           <div
             style={{
               background: 'var(--bg-input)',
@@ -365,7 +488,9 @@ export function AssistantChatContainer({
               onKeyDown={handleKeyDown}
               disabled={isLoading}
               placeholder={
-                isAuthority
+                language === 'hi'
+                  ? 'भारतीय मानकों (IS कोड), प्रमाणन, परीक्षण प्रयोगशालाओं या हॉलमार्किंग के बारे में पूछें...'
+                  : isAuthority
                   ? 'Ask technical regulatory query (e.g. Sampling lot size under IS 14543 or QCO notification date)...'
                   : 'Ask any question regarding Indian Standards (IS codes), ISI mark certification, testing labs, or hallmarking...'
               }
@@ -394,7 +519,7 @@ export function AssistantChatContainer({
                 borderTop: '1px solid var(--border-subtle)',
               }}
             >
-              {/* Left Action Buttons: Attachment & Voice (Integration-ready UI) */}
+              {/* Left Action Buttons: Attachment & Voice */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                 <button
                   type="button"
@@ -422,22 +547,37 @@ export function AssistantChatContainer({
 
                 <button
                   type="button"
-                  title="Speech to Text (Integration-Ready UI for Hackathon Demo)"
-                  aria-label="Voice Input (Speech to Text)"
-                  onClick={() => {
-                    alert('Voice recognition microphone interface will connect with Parth’s STT service.')
-                  }}
+                  title={
+                    isVoiceActive
+                      ? 'Stop Voice Input'
+                      : 'Voice Input (Speech to Text Preview)'
+                  }
+                  aria-label={
+                    isVoiceActive
+                      ? 'Stop Voice Input Recording'
+                      : 'Voice Input (Speech to Text Preview)'
+                  }
+                  aria-pressed={isVoiceActive}
+                  onClick={() => setIsVoiceActive(!isVoiceActive)}
                   style={{
-                    background: 'transparent',
-                    border: 'none',
-                    color: 'var(--text-muted)',
+                    background: isVoiceActive ? 'rgba(239, 68, 68, 0.15)' : 'transparent',
+                    border: isVoiceActive ? '1px solid var(--color-error)' : 'none',
+                    color: isVoiceActive ? 'var(--color-error)' : 'var(--text-muted)',
                     padding: 6,
                     cursor: 'pointer',
                     borderRadius: 'var(--radius-sm)',
                     display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    transition: 'all var(--transition-fast)',
                   }}
                 >
                   <Mic size={15} />
+                  {isVoiceActive && (
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--color-error)' }}>
+                      Recording...
+                    </span>
+                  )}
                 </button>
               </div>
 

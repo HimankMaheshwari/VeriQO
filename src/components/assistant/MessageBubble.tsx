@@ -122,6 +122,25 @@ export function MessageBubble({ message, onRetry }: MessageBubbleProps) {
             </div>
           )}
 
+          {/* Empty Sources / Evidence Guidance Notice */}
+          {!isUser && message.evidence && message.evidence.sources.length === 0 && (
+            <div
+              style={{
+                marginTop: 'var(--space-3)',
+                padding: 'var(--space-2) var(--space-3)',
+                background: 'rgba(59, 130, 246, 0.05)',
+                border: '1px solid var(--border-subtle)',
+                borderRadius: 'var(--radius-md)',
+                fontSize: '11px',
+                color: 'var(--text-muted)',
+                lineHeight: 1.4,
+              }}
+            >
+              <strong style={{ color: 'var(--text-secondary)' }}>Note on Citations: </strong>
+              No specific standard clause was cited for this inquiry. To view clause-level specifications, test methods, and tolerances, specify a product name (e.g. &ldquo;packaged drinking water&rdquo;, &ldquo;LED bulb&rdquo;) or standard number (e.g. &ldquo;IS 14543&rdquo;).
+            </div>
+          )}
+
           {/* "Why this answer?" Expandable Section */}
           {message.evidence && (
             <WhyThisAnswerAccordion evidence={message.evidence} />

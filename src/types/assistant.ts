@@ -192,6 +192,6 @@ export interface AssistantResponse {
 
 export interface AssistantService {
   sendMessage(request: AssistantRequest): Promise<AssistantResponse>
-  getInitialWelcomeMessage(mode: AssistantMode, standardContext?: StandardContext): AssistantMessage
-  getSuggestedPrompts(mode: AssistantMode, standardContext?: StandardContext): SuggestedPrompt[]
+  getInitialWelcomeMessage(mode: AssistantMode, standardContext?: StandardContext, language?: string): AssistantMessage
+  getSuggestedPrompts(mode: AssistantMode, standardContext?: StandardContext, language?: string): SuggestedPrompt[]
 }

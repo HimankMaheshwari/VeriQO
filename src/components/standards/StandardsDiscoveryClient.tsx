@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useEffect, useCallback } from 'react'
+import Link from 'next/link'
 import {
   STANDARDS_CATEGORIES,
   type StandardDiscoveryItem,
@@ -28,6 +29,7 @@ import {
   Lightbulb,
   Layers,
   ShieldAlert,
+  Bot,
 } from 'lucide-react'
 
 const QUICK_EXAMPLES = [
@@ -409,7 +411,7 @@ export function StandardsDiscoveryClient({
             )}
           </div>
 
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, overflowX: 'auto', WebkitOverflowScrolling: 'touch', paddingBottom: 4 }}>
             {STANDARDS_CATEGORIES.map((cat) => {
               const isSelected = selectedCategory === cat
               return (
@@ -581,13 +583,54 @@ export function StandardsDiscoveryClient({
               title="No matching Indian Standards found"
               description={
                 query || productDescription
-                  ? `No standards matched your query "${query || productDescription}". Try searching by commodity name (e.g. "drinking water", "cement", "LED", "gold") or resetting sector filters.`
+                  ? `No standards matched your query "${query || productDescription}". Try searching by commodity name, standard number (e.g. "IS 14543"), or selecting one of the suggested commodities below.`
                   : 'No standards match the selected category and QCO filters.'
               }
               action={
-                <Button variant="primary" onClick={handleClearAll}>
-                  Reset All Filters
-                </Button>
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'var(--space-3)', width: '100%', maxWidth: 440 }}>
+                  <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap', justifyContent: 'center' }}>
+                    <Button variant="primary" size="sm" onClick={handleClearAll} style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                      <RefreshCw size={13} /> Reset All Filters
+                    </Button>
+                    {(query || productDescription) && (
+                      <Link
+                        href={`/consumer/assistant?productName=${encodeURIComponent(query || productDescription)}`}
+                        style={{ textDecoration: 'none' }}
+                      >
+                        <Button variant="secondary" size="sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+                          <Bot size={13} /> Ask BIS Assistant
+                        </Button>
+                      </Link>
+                    )}
+                  </div>
+
+                  <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', textAlign: 'center', marginTop: 4 }}>
+                    Try searching for:
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', justifyContent: 'center', marginTop: 6 }}>
+                      {['drinking water', 'LED bulb', 'gold jewellery', 'cement'].map((term) => (
+                        <button
+                          key={term}
+                          type="button"
+                          onClick={() => {
+                            setQuery(term)
+                            performSearch({ q: term })
+                          }}
+                          style={{
+                            fontSize: '11px',
+                            padding: '2px 8px',
+                            borderRadius: 'var(--radius-full)',
+                            background: 'var(--bg-elevated)',
+                            border: '1px solid var(--border-default)',
+                            color: 'var(--brand-300)',
+                            cursor: 'pointer',
+                          }}
+                        >
+                          &ldquo;{term}&rdquo;
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               }
             />
           </CardBody>

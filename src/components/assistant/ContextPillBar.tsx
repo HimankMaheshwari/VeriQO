@@ -8,6 +8,7 @@ import { BookOpen, Package, X, Edit3, Plus } from 'lucide-react'
 interface ContextPillBarProps {
   standardContext?: StandardContext
   productContext?: ProductContext
+  language?: string
   onRemoveStandard: () => void
   onRemoveProduct: () => void
   onOpenProductModal: () => void
@@ -16,11 +17,12 @@ interface ContextPillBarProps {
 export function ContextPillBar({
   standardContext,
   productContext,
+  language = 'en',
   onRemoveStandard,
   onRemoveProduct,
   onOpenProductModal,
 }: ContextPillBarProps) {
-  if (!standardContext && !productContext) {
+  if (!standardContext && !productContext && language !== 'hi') {
     return (
       <div
         style={{
@@ -74,6 +76,25 @@ export function ContextPillBar({
       <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', fontWeight: 600 }}>
         Active Context:
       </span>
+
+      {/* Language Pill */}
+      {language === 'hi' && (
+        <div
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 6,
+            padding: '3px 10px',
+            background: 'rgba(234, 179, 8, 0.15)',
+            border: '1px solid var(--color-warning)',
+            borderRadius: 'var(--radius-full)',
+            fontSize: '11px',
+            color: 'var(--text-primary)',
+          }}
+        >
+          <span>🌐 भाषा: <strong>हिन्दी (Hindi)</strong></span>
+        </div>
+      )}
 
       {/* Standard Context Chip */}
       {standardContext && (

@@ -237,7 +237,9 @@ export function AuthorityVerificationPanel({
                   Bureau of Indian Standards (BIS) &amp; QCO Cross-Reference
                 </span>
               </div>
-              {qcoInfo.isMandatory ? (
+              {qcoInfo.standardNumber === 'Not available in demo data' ? (
+                <Badge variant="warning">Catalog Sync Pending</Badge>
+              ) : qcoInfo.isMandatory ? (
                 <Badge variant="error" dot>Mandatory QCO Enforced</Badge>
               ) : (
                 <Badge variant="default">Demo Cross-Reference</Badge>
@@ -282,6 +284,24 @@ export function AuthorityVerificationPanel({
                 </div>
               </div>
             </div>
+
+            {qcoInfo.standardNumber === 'Not available in demo data' && (
+              <div
+                style={{
+                  marginTop: 'var(--space-3)',
+                  padding: 'var(--space-2) var(--space-3)',
+                  background: 'rgba(234, 179, 8, 0.08)',
+                  border: '1px solid rgba(234, 179, 8, 0.25)',
+                  borderRadius: 'var(--radius-sm)',
+                  fontSize: '11px',
+                  color: 'var(--text-secondary)',
+                  lineHeight: 1.4,
+                }}
+              >
+                <strong>Live Registry Status: </strong>
+                Specific standard cross-reference not identified in current demo catalog for &ldquo;{productName}&rdquo;. Live BIS central registry integration will populate this automatically. Officers may manually verify ISI/CRS marks using the checklist below.
+              </div>
+            )}
           </div>
 
           {/* Section 3: AI Advisory Regulatory Notice */}
@@ -329,14 +349,17 @@ export function AuthorityVerificationPanel({
             </div>
 
             <div
+              className="table-scroll-container"
               style={{
                 border: '1px solid var(--border-default)',
                 borderRadius: 'var(--radius-md)',
-                overflow: 'hidden',
+                overflowX: 'auto',
+                WebkitOverflowScrolling: 'touch',
               }}
             >
               <table
                 style={{
+                  minWidth: 640,
                   width: '100%',
                   borderCollapse: 'collapse',
                   fontSize: 'var(--text-xs)',

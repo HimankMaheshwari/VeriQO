@@ -69,14 +69,7 @@ export default function AssistantPage({ searchParams }: AssistantPageProps) {
       />
 
       {/* Main Assistant Layout */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 340px',
-          gap: 'var(--space-6)',
-          alignItems: 'start',
-        }}
-      >
+      <div className="responsive-grid-2col">
         {/* Left Column: Interactive Chat Container */}
         <div>
           <AssistantChatContainer

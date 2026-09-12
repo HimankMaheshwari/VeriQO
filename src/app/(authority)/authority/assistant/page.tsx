@@ -29,14 +29,7 @@ export default function AuthorityAssistantPage() {
         }
       />
 
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: '1fr 340px',
-          gap: 'var(--space-6)',
-          alignItems: 'start',
-        }}
-      >
+      <div className="responsive-grid-2col">
         {/* Left Column: Interactive Officer Copilot Chat Container */}
         <div>
           <AssistantChatContainer

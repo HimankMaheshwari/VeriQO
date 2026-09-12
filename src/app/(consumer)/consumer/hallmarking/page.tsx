@@ -62,7 +62,9 @@ export default function HallmarkingPage() {
               >
                 <ShieldCheck size={28} />
               </div>
-              <Badge variant="info" style={{ marginBottom: 8 }}>Sign 1</Badge>
+              <div style={{ marginBottom: 'var(--space-2)' }}>
+                <Badge variant="info">Sign 1</Badge>
+              </div>
               <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, marginBottom: 4 }}>BIS Standard Logo</h3>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
                 A triangular mark indicating that the jewellery has been certified and audited by the Bureau of Indian Standards.
@@ -87,7 +89,9 @@ export default function HallmarkingPage() {
               >
                 <Gem size={28} />
               </div>
-              <Badge variant="warning" style={{ marginBottom: 8 }}>Sign 2</Badge>
+              <div style={{ marginBottom: 'var(--space-2)' }}>
+                <Badge variant="warning">Sign 2</Badge>
+              </div>
               <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, marginBottom: 4 }}>Purity &amp; Fineness Mark</h3>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
                 Indicates gold purity grade: <strong>22K916</strong> (91.6% pure), <strong>18K750</strong> (75% pure), or <strong>14K585</strong> (58.5% pure).
@@ -112,7 +116,9 @@ export default function HallmarkingPage() {
               >
                 <CheckCircle2 size={28} />
               </div>
-              <Badge variant="success" style={{ marginBottom: 8 }}>Sign 3</Badge>
+              <div style={{ marginBottom: 'var(--space-2)' }}>
+                <Badge variant="success">Sign 3</Badge>
+              </div>
               <h3 style={{ fontSize: 'var(--text-base)', fontWeight: 600, marginBottom: 4 }}>6-Digit HUID Code</h3>
               <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', margin: 0, lineHeight: 1.5 }}>
                 A laser-engraved 6-digit alphanumeric unique identifier (e.g. <code>AB1234</code>) giving individual piece traceability to the assaying center.

@@ -12,6 +12,9 @@ export interface CitationSource {
   clauseTitle?: string
   excerpt: string
   qcoReference?: string
+  chunkId?: string
+  sourceReference?: string
+  relevanceScore?: number
 }
 
 export interface AssistantMessageDto {
@@ -39,6 +42,18 @@ export interface AssistantChatRequest {
   contextStandardNumber?: string
 }
 
+export interface RetrievedEvidenceItem {
+  chunkId: string
+  standardNumber: string
+  standardTitle?: string
+  clauseNumber?: string | null
+  clauseTitle?: string | null
+  text: string
+  score: number
+  sourceReference: string
+  isDemoRecord?: boolean
+}
+
 export interface AssistantChatResponse {
   conversationId: string
   messageId: string
@@ -47,6 +62,26 @@ export interface AssistantChatResponse {
   confidenceScore: number
   grounded: boolean
   disclaimer: string
+  retrievedEvidence?: RetrievedEvidenceItem[]
+  insufficientEvidence?: boolean
+  provider?: string
+  model?: string
+  isDemoData?: boolean
+}
+
+export interface CitationTraceability {
+  citation: CitationSource
+  standardVerified: boolean
+  clauseVerified: boolean
+  chunkVerified: boolean
+  status:
+    | 'VERIFIED'
+    | 'NONEXISTENT_STANDARD'
+    | 'NONEXISTENT_CLAUSE'
+    | 'MISMATCHED_STANDARD_CLAUSE'
+    | 'FABRICATED'
+    | 'NOT_IN_RETRIEVED_EVIDENCE'
+  reason?: string
 }
 
 export interface CitationValidationResult {
@@ -54,4 +89,34 @@ export interface CitationValidationResult {
   validCitations: CitationSource[]
   unverifiedReferences: string[]
   reasons: string[]
+  traceability?: CitationTraceability[]
 }
+
+export interface GroundedGenerationInput {
+  userQuery: string
+  retrievedEvidence: RetrievedEvidenceItem[]
+  conversationHistory?: Array<{ role: 'USER' | 'ASSISTANT'; content: string }>
+}
+
+export interface GroundedCitation {
+  standardNumber: string
+  clauseNumber?: string
+  chunkId?: string
+  excerpt?: string
+}
+
+export interface GroundedGenerationOutput {
+  answer: string
+  citations: CitationSource[]
+  confidence: number
+  grounded: boolean
+  refusalReason?: string
+  provider?: string
+  model?: string
+}
+
+export interface IGroundedGenerationProvider {
+  readonly providerName: string
+  generateGroundedResponse(input: GroundedGenerationInput): Promise<GroundedGenerationOutput>
+}
+

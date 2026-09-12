@@ -10,6 +10,7 @@ import type {
   AssistantConversationDto,
   CitationSource,
   CitationValidationResult,
+  RetrievedEvidenceItem,
 } from '@/types/assistant'
 
 export interface IAssistantService {
@@ -19,6 +20,9 @@ export interface IAssistantService {
 }
 
 export interface ICitationValidator {
-  validateCitations(citations: CitationSource[]): Promise<CitationValidationResult>
+  validateCitations(
+    citations: CitationSource[],
+    retrievedEvidence?: RetrievedEvidenceItem[]
+  ): Promise<CitationValidationResult>
   extractKnownStandardCitations(text: string): Promise<CitationSource[]>
 }

@@ -20,7 +20,7 @@ import type {
 export interface IStandardsService {
   searchStandards(filters: StandardSearchFilters): Promise<{ standards: BisStandardItem[]; total: number; page: number; pageSize: number }>
   getStandardById(id: string): Promise<BisStandardDetail | null>
-  getStandardByNumber(standardNumber: string): Promise<BisStandardDetail | null>
+  getStandardByNumber(standardNumber: string): Promise<BisStandardDetail>
 }
 
 export interface ILicenseService {

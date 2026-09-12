@@ -43,6 +43,9 @@ export class BisStandardsService implements IStandardsService {
       if (typeof isMandatory === 'boolean') {
         whereClause.isMandatory = isMandatory
       }
+      if (filters.status) {
+        whereClause.status = filters.status.toUpperCase()
+      }
 
       const [dbTotal, dbRecords] = await Promise.all([
         this.db.bisStandard.count({ where: whereClause }),
@@ -98,6 +101,9 @@ export class BisStandardsService implements IStandardsService {
     }
     if (typeof isMandatory === 'boolean') {
       filtered = filtered.filter((s) => s.isMandatory === isMandatory)
+    }
+    if (filters.status) {
+      filtered = filtered.filter((s) => s.status.toUpperCase() === filters.status?.toUpperCase())
     }
 
     const total = filtered.length
@@ -197,7 +203,7 @@ export class BisStandardsService implements IStandardsService {
   /**
    * Retrieves standard by standard number (e.g. "IS 10500:2012" or "IS 10500").
    */
-  async getStandardByNumber(standardNumber: string): Promise<BisStandardDetail | null> {
+  async getStandardByNumber(standardNumber: string): Promise<BisStandardDetail> {
     const cleanNumber = standardNumber.trim().toUpperCase()
 
     try {
@@ -215,7 +221,7 @@ export class BisStandardsService implements IStandardsService {
       })
 
       if (dbStandard) {
-        return this.getStandardById(dbStandard.id)
+        return (await this.getStandardById(dbStandard.id)) as BisStandardDetail
       }
     } catch {
       // Fall through to mock dataset
@@ -226,7 +232,7 @@ export class BisStandardsService implements IStandardsService {
         s.standardNumber.toUpperCase() === cleanNumber ||
         s.standardNumber.toUpperCase().startsWith(cleanNumber)
     )
-    return mock ?? null
+    return (mock ?? null) as BisStandardDetail
   }
 }
 

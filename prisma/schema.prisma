@@ -716,15 +716,22 @@ model BisStandard {
   icsCode        String?               // International Classification for Standards
   isMandatory    Boolean               @default(false)
   mandatedByQco  String?
+  scope          String?               @db.Text
+  category       String?
+  publishedDate  DateTime?
+  sourceUrl      String?
+  sourceType     String?               @default("OFFICIAL_GAZETTE")
   pdfStorageKey  String?
   metadata       Json?
   createdAt      DateTime              @default(now())
   updatedAt      DateTime              @updatedAt
 
   // Relations
-  clauses        BisStandardClause[]
-  licenses       BisLicense[]
-  qcos           QualityControlOrder[]
+  clauses          BisStandardClause[]
+  licenses         BisLicense[]
+  qcos             QualityControlOrder[]
+  knowledgeChunks  BisKnowledgeChunk[]
+  knowledgeSources BisKnowledgeSource[]
 
   @@index([standardNumber])
   @@index([division])
@@ -733,20 +740,26 @@ model BisStandard {
 }
 
 model BisStandardClause {
-  id           String      @id @default(cuid())
-  standardId   String
-  clauseNumber String      // e.g. "4.1", "Table 1"
-  title        String?
-  content      String      @db.Text
-  isMandatory  Boolean     @default(true)
-  clauseType   String?     // SPECIFICATION, TEST_METHOD, SAMPLING, PACKAGING_MARKING
-  limits       Json?       // min, max, permissible, unit
-  orderIndex   Int         @default(0)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id                  String              @id @default(cuid())
+  standardId          String
+  clauseNumber        String              // e.g. "4.1", "Table 1"
+  title               String?
+  content             String              @db.Text
+  isMandatory         Boolean             @default(true)
+  clauseType          String?             // SPECIFICATION, TEST_METHOD, SAMPLING, PACKAGING_MARKING
+  limits              Json?               // min, max, permissible, unit
+  orderIndex          Int                 @default(0)
+  pageNumber          Int?
+  sourceRef           String?
+  parentClauseNumber  String?
+  hierarchyPath       String?
+  metadata            Json?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt
 
   // Relations
-  standard     BisStandard @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  standard            BisStandard         @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  knowledgeChunks     BisKnowledgeChunk[]
 
   @@index([standardId])
   @@index([clauseNumber])
@@ -840,5 +853,52 @@ model BisAssistantMessage {
 
   @@index([conversationId])
   @@index([createdAt])
+}
+
+model BisKnowledgeChunk {
+  id               String              @id @default(cuid())
+  standardId       String
+  clauseId         String?
+  chunkText        String              @db.Text
+  normalizedText   String              @db.Text
+  chunkIndex       Int                 @default(0)
+  tokenCount       Int?
+  characterCount   Int?
+  sourceReference  String?
+  metadata         Json?
+  embeddingStatus  String              @default("PENDING") // PENDING, GENERATED, NOT_REQUIRED
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
+
+  // Relations
+  standard         BisStandard         @relation(fields: [standardId], references: [id], onDelete: Cascade)
+  clause           BisStandardClause?  @relation(fields: [clauseId], references: [id], onDelete: SetNull)
+
+  @@index([standardId])
+  @@index([clauseId])
+  @@index([chunkIndex])
+  @@index([embeddingStatus])
+}
+
+model BisKnowledgeSource {
+  id               String       @id @default(cuid())
+  standardId       String?
+  sourceName       String       // e.g. "Official Gazette of India", "Bureau of Indian Standards"
+  sourceType       String       // GAZETTE, BIS_STANDARD_DOCUMENT, QCO_NOTIFICATION, AMENDMENT
+  sourceUrl        String?
+  version          String?
+  checksum         String?      // SHA-256 hash
+  ingestionStatus  String       @default("COMPLETED") // PENDING, PROCESSING, COMPLETED, FAILED
+  metadata         Json?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+
+  // Relations
+  standard         BisStandard? @relation(fields: [standardId], references: [id], onDelete: SetNull)
+
+  @@index([sourceName])
+  @@index([sourceType])
+  @@index([ingestionStatus])
+  @@index([standardId])
 }
 

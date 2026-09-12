@@ -193,3 +193,16 @@ export interface PackagingDualComplianceResult {
     statutoryRemedy: string
   }>
 }
+
+// ─────────────────────────────────────────────────────────────
+// 5. KNOWLEDGE BASE & RAG TYPES
+// ─────────────────────────────────────────────────────────────
+
+export * from '@/lib/bis/knowledge/types'
+
+// ─────────────────────────────────────────────────────────────
+// 6. PHASE 5: UNIFIED PACKAGING INSPECTION TYPES
+// ─────────────────────────────────────────────────────────────
+
+export * from './bis-inspection'
+

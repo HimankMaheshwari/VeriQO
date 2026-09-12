@@ -22,6 +22,10 @@ import {
   Briefcase,
   AlertTriangle,
   X,
+  Sparkles,
+  Award,
+  FlaskConical,
+  Gem,
 } from 'lucide-react'
 
 interface NavItem {
@@ -32,6 +36,11 @@ interface NavItem {
 
 const consumerNav: NavItem[] = [
   { label: 'Dashboard', href: '/consumer/dashboard', icon: <LayoutDashboard size={18} /> },
+  { label: 'AI Standards Assistant', href: '/consumer/assistant', icon: <Sparkles size={18} /> },
+  { label: 'Indian Standards', href: '/consumer/standards', icon: <BookOpen size={18} /> },
+  { label: 'Certification Schemes', href: '/consumer/schemes', icon: <Award size={18} /> },
+  { label: 'Testing Labs', href: '/consumer/laboratories', icon: <FlaskConical size={18} /> },
+  { label: 'Hallmarking & HUID', href: '/consumer/hallmarking', icon: <Gem size={18} /> },
   { label: 'Scan Product', href: '/consumer/scan', icon: <ScanLine size={18} /> },
   { label: 'Complaints', href: '/consumer/complaints', icon: <FileText size={18} /> },
   { label: 'Scan History', href: '/consumer/history', icon: <History size={18} /> },
@@ -39,6 +48,8 @@ const consumerNav: NavItem[] = [
 
 const authorityNav: NavItem[] = [
   { label: 'Dashboard', href: '/authority/dashboard', icon: <LayoutDashboard size={18} /> },
+  { label: 'Standards Copilot', href: '/authority/assistant', icon: <Sparkles size={18} /> },
+  { label: 'Indian Standards', href: '/consumer/standards', icon: <BookOpen size={18} /> },
   { label: 'Product Scanner', href: '/authority/scan', icon: <ScanLine size={18} /> },
   { label: 'Cases', href: '/authority/cases', icon: <Briefcase size={18} /> },
   { label: 'Risk Queue', href: '/authority/risk', icon: <AlertTriangle size={18} /> },
@@ -49,6 +60,8 @@ const authorityNav: NavItem[] = [
 
 const adminNav: NavItem[] = [
   { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard size={18} /> },
+  { label: 'AI Standards Assistant', href: '/consumer/assistant', icon: <Sparkles size={18} /> },
+  { label: 'Indian Standards', href: '/consumer/standards', icon: <BookOpen size={18} /> },
   { label: 'Risk Queue', href: '/authority/risk', icon: <AlertTriangle size={18} /> },
   { label: 'Search & Investigation', href: '/authority/search', icon: <Search size={18} /> },
   { label: 'Users', href: '/admin/users', icon: <Users size={18} /> },

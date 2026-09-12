@@ -4,6 +4,7 @@ import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { STARTER_PROMPTS, SUPPORTED_LANGUAGES } from '@/types/assistant'
+import Link from 'next/link'
 import {
   Sparkles,
   Send,
@@ -16,6 +17,8 @@ import {
   Globe,
   Bot,
   CheckCircle2,
+  ArrowRight,
+  ChevronRight,
 } from 'lucide-react'
 
 export const metadata = {
@@ -23,7 +26,17 @@ export const metadata = {
   description: 'AI conversational assistant for Indian Standards, BIS certification schemes, testing requirements, and hallmarking.',
 }
 
-export default function AssistantPage() {
+interface AssistantPageProps {
+  searchParams?: {
+    standard?: string
+    topic?: string
+  }
+}
+
+export default function AssistantPage({ searchParams }: AssistantPageProps) {
+  const activeStandard = searchParams?.standard
+  const activeTopic = searchParams?.topic
+
   return (
     <div>
       <PageHeader
@@ -40,6 +53,74 @@ export default function AssistantPage() {
           </div>
         }
       />
+
+      {/* Active Standard Handoff Context Banner (If arrived from Standards Discovery) */}
+      {activeStandard && (
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(37, 99, 235, 0.12), rgba(30, 58, 138, 0.2))',
+            border: '1px solid var(--brand-500)',
+            borderRadius: 'var(--radius-lg)',
+            padding: 'var(--space-4)',
+            marginBottom: 'var(--space-5)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 'var(--space-3)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
+              style={{
+                width: 38,
+                height: 38,
+                borderRadius: 'var(--radius-md)',
+                background: 'var(--brand-600)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                flexShrink: 0,
+              }}
+            >
+              <BookOpen size={20} />
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                <span
+                  style={{
+                    fontSize: 'var(--text-xs)',
+                    fontWeight: 600,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.04em',
+                    color: 'var(--brand-300)',
+                  }}
+                >
+                  Active Consultation Context
+                </span>
+                <Badge variant="info" dot>Context Injected</Badge>
+              </div>
+              <div style={{ fontSize: 'var(--text-sm)', color: 'var(--text-primary)', fontWeight: 600 }}>
+                {activeStandard} {activeTopic ? `— ${activeTopic}` : ''}
+              </div>
+            </div>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Link href="/consumer/standards">
+              <Button
+                variant="secondary"
+                size="sm"
+                style={{ fontSize: 'var(--text-xs)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+              >
+                Change Standard
+              </Button>
+            </Link>
+          </div>
+        </div>
+      )}
+
 
       {/* Intelligence & Source-Backing Guidance Banner */}
       <div
@@ -139,6 +220,80 @@ export default function AssistantPage() {
                   </p>
                 </div>
               </div>
+
+              {/* Targeted Queries for Active Standard Context */}
+              {activeStandard && (
+                <div style={{ marginBottom: 'var(--space-6)' }}>
+                  <div
+                    style={{
+                      fontSize: 'var(--text-xs)',
+                      color: 'var(--brand-300)',
+                      marginBottom: 'var(--space-3)',
+                      fontWeight: 600,
+                      textTransform: 'uppercase',
+                      letterSpacing: '0.05em',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                    }}
+                  >
+                    <Sparkles size={14} style={{ color: 'var(--brand-400)' }} />
+                    Targeted Consultations for {activeStandard}
+                  </div>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 'var(--space-3)' }}>
+                    {[
+                      {
+                        id: 'ctx-1',
+                        title: 'Mandatory Clauses & Tolerances',
+                        badgeText: 'Testing',
+                        prompt: `What are the critical testing methods and prescribed tolerances mandated under ${activeStandard}?`,
+                      },
+                      {
+                        id: 'ctx-2',
+                        title: 'Quality Control Order Mandate',
+                        badgeText: 'Enforcement',
+                        prompt: `Has the Central Government issued a mandatory Quality Control Order (QCO) enforcing compulsory certification for ${activeStandard}?`,
+                      },
+                      {
+                        id: 'ctx-3',
+                        title: 'Certification Scheme & Markings',
+                        badgeText: 'Compliance',
+                        prompt: `Which BIS certification scheme (ISI Mark Scheme I, CRS, or Hallmarking) applies to ${activeStandard}, and what marks are required?`,
+                      },
+                      {
+                        id: 'ctx-4',
+                        title: 'Accredited Laboratory Testing',
+                        badgeText: 'Labs',
+                        prompt: `Where can I find BIS-recognized or NABL-accredited testing laboratories capable of testing commodities per ${activeStandard}?`,
+                      },
+                    ].map((item) => (
+                      <div
+                        key={item.id}
+                        className="hover-card"
+                        style={{
+                          padding: 'var(--space-3) var(--space-4)',
+                          background: 'var(--bg-surface)',
+                          border: '1px solid var(--brand-700)',
+                          borderRadius: 'var(--radius-md)',
+                          cursor: 'pointer',
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+                          <span style={{ fontSize: 'var(--text-xs)', fontWeight: 600, color: 'var(--brand-300)' }}>
+                            {item.title}
+                          </span>
+                          <span style={{ fontSize: '10px', background: 'rgba(59, 130, 246, 0.2)', color: 'var(--brand-300)', padding: '2px 6px', borderRadius: 'var(--radius-sm)' }}>
+                            {item.badgeText}
+                          </span>
+                        </div>
+                        <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.4 }}>
+                          {item.prompt}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Starter Topics Grid */}
               <div style={{ marginBottom: 'var(--space-6)' }}>

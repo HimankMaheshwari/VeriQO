@@ -97,3 +97,53 @@ export const STANDARDS_CATEGORIES = [
   'Medical Equipment',
   'Jewellery & Precious Metals',
 ] as const
+
+export type StandardsCategory = typeof STANDARDS_CATEGORIES[number]
+
+export type MatchLevel = 'HIGH' | 'MEDIUM' | 'LOW'
+
+export interface StandardMatchReasoning {
+  summary: string
+  matchedKeywords: string[]
+  applicabilityNotes: string
+  regulatoryStatusNote: string
+}
+
+export interface StandardDiscoveryItem extends IndianStandardDetail {
+  shortDescription: string
+  matchScore: number             // 0-100 advisory match confidence
+  matchLevel: MatchLevel
+  reasoning?: StandardMatchReasoning
+  officialSource: {
+    gazetteNumber?: string
+    bisPortalUrl?: string
+    yearOfPublication: number
+    ministryOrDepartment?: string
+  }
+}
+
+export type QcoFilterOption = 'ALL' | 'MANDATORY' | 'VOLUNTARY'
+export type SortOption = 'RELEVANCE' | 'STANDARD_ASC' | 'YEAR_DESC'
+
+export interface StandardsFilterState {
+  query: string
+  productDescription: string
+  category: string
+  qcoType: QcoFilterOption
+  sortBy: SortOption
+}
+
+export interface StandardsDiscoveryResult {
+  items: StandardDiscoveryItem[]
+  totalCount: number
+  hasSearched: boolean
+  appliedQuery?: string
+  appliedDescription?: string
+}
+
+export interface StandardsDiscoveryService {
+  searchStandards(filters: Partial<StandardsFilterState>): Promise<StandardsDiscoveryResult>
+  getStandardById(id: string): Promise<StandardDiscoveryItem | null>
+  getFeaturedStandards(): Promise<StandardDiscoveryItem[]>
+  findStandardsByDescription(description: string): Promise<StandardsDiscoveryResult>
+}

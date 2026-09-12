@@ -129,6 +129,7 @@ export interface ProductContext {
   productName: string
   productDescription: string
   intendedUseCategory?: string
+  category?: string
 }
 
 export interface AssistantSource {

@@ -27,6 +27,10 @@ import {
   ChevronDown,
   ChevronUp,
   Globe,
+  BookOpen,
+  Bot,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react'
 
 export interface SerializedScanImage {
@@ -447,6 +451,189 @@ export default function ScanDetailClient({ initialScan }: { initialScan: Seriali
           </div>
         </Card>
       </div>
+
+      {/* PS107 End-to-End Verification Pipeline Stepper */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--space-3) var(--space-4)',
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-lg)',
+          marginBottom: 'var(--space-6)',
+          overflowX: 'auto',
+          gap: 'var(--space-2)',
+        }}
+      >
+        {[
+          { step: '1', title: 'Scan Package', status: 'done' },
+          { step: '2', title: 'Compliance Findings', status: 'current' },
+          { step: '3', title: 'Related BIS Standards', status: 'next' },
+          { step: '4', title: 'BIS Assistant', status: 'next' },
+          { step: '5', title: 'Authority Review', status: 'next' },
+          { step: '6', title: 'Officer Verification', status: 'next' },
+        ].map((item, idx, arr) => (
+          <React.Fragment key={item.step}>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                whiteSpace: 'nowrap',
+                opacity: item.status === 'next' ? 0.7 : 1,
+              }}
+            >
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 'var(--radius-full)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 'var(--font-bold)',
+                  background:
+                    item.status === 'done'
+                      ? 'var(--color-success-bg)'
+                      : item.status === 'current'
+                      ? 'var(--brand-600)'
+                      : 'var(--bg-surface)',
+                  color:
+                    item.status === 'done'
+                      ? 'var(--color-success)'
+                      : item.status === 'current'
+                      ? 'white'
+                      : 'var(--text-muted)',
+                  border:
+                    item.status === 'done'
+                      ? '1px solid var(--color-success)'
+                      : item.status === 'current'
+                      ? '1px solid var(--brand-500)'
+                      : '1px solid var(--border-subtle)',
+                }}
+              >
+                {item.status === 'done' ? '✓' : item.step}
+              </div>
+              <span
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: item.status === 'current' ? 'var(--font-semibold)' : 'var(--font-normal)',
+                  color: item.status === 'current' ? 'var(--text-primary)' : 'var(--text-muted)',
+                }}
+              >
+                {item.title}
+              </span>
+            </div>
+            {idx < arr.length - 1 && (
+              <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', padding: '0 2px' }}>
+                →
+              </span>
+            )}
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* BIS Standards & Regulatory Intelligence Card (PS107 Bridge) */}
+      <Card style={{ marginBottom: 'var(--space-6)' }}>
+        <CardHeader>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              width: '100%',
+              flexWrap: 'wrap',
+              gap: 'var(--space-2)',
+            }}
+          >
+            <CardTitle style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <BookOpen size={18} style={{ color: 'var(--brand-400)' }} />
+              BIS Standards &amp; Quality Regulatory Context
+            </CardTitle>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <Badge variant="info">PS107 Intelligence Bridge</Badge>
+              <Badge variant="default">Advisory Notice</Badge>
+            </div>
+          </div>
+        </CardHeader>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <div
+            style={{
+              padding: 'var(--space-3) var(--space-4)',
+              background: 'rgba(59, 130, 246, 0.06)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: 'var(--radius-md)',
+              fontSize: 'var(--text-xs)',
+              color: 'var(--text-secondary)',
+              lineHeight: 1.6,
+            }}
+          >
+            <strong style={{ color: 'var(--text-primary)' }}>Legal Metrology vs. BIS Standards: </strong>
+            Legal Metrology (Packaged Commodities) Rules, 2011 mandate packaging declarations (MRP, net quantity, manufacturer address, and consumer care). In parallel, Bureau of Indian Standards (BIS) formulates technical quality, safety specifications, and Quality Control Orders (QCOs) for product formulations. Both frameworks operate complementarily for consumer protection.
+          </div>
+
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              flexWrap: 'wrap',
+              gap: 'var(--space-3)',
+            }}
+          >
+            <div>
+              <div
+                style={{
+                  fontSize: 'var(--text-sm)',
+                  fontWeight: 'var(--font-semibold)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Explore Technical Specifications for {productName}
+              </div>
+              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
+                Check mandatory Quality Control Orders (QCOs), testing protocols, accredited labs, and ISI mark applicability.
+              </div>
+            </div>
+
+            <div style={{ display: 'flex', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+              <Link
+                href={`/consumer/standards?q=${encodeURIComponent(productName)}&cat=${encodeURIComponent(
+                  scan.identifiedCategory || ''
+                )}`}
+                style={{ textDecoration: 'none' }}
+              >
+                <Button
+                  variant="primary"
+                  size="sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <BookOpen size={14} /> Explore Related BIS Standards <ArrowRight size={13} />
+                </Button>
+              </Link>
+              <Link
+                href={`/consumer/assistant?productName=${encodeURIComponent(
+                  productName
+                )}&productDesc=${encodeURIComponent(
+                  scan.rawOcrText?.slice(0, 150) || productName
+                )}&cat=${encodeURIComponent(scan.identifiedCategory || '')}`}
+                style={{ textDecoration: 'none' }}
+              >
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+                >
+                  <Bot size={14} /> Ask BIS Assistant
+                </Button>
+              </Link>
+            </div>
+          </div>
+        </div>
+      </Card>
 
       {/* Package Images Gallery & Side-by-Side OCR */}
       <Card style={{ marginBottom: 'var(--space-6)' }}>

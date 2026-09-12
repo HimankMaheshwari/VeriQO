@@ -2,7 +2,7 @@ import React from 'react'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
-import { SUPPORTED_LANGUAGES, type StandardContext } from '@/types/assistant'
+import { SUPPORTED_LANGUAGES, type StandardContext, type ProductContext } from '@/types/assistant'
 import { AssistantChatContainer } from '@/components/assistant/AssistantChatContainer'
 import {
   BookOpen,
@@ -23,17 +23,31 @@ interface AssistantPageProps {
   searchParams?: {
     standard?: string
     topic?: string
+    productName?: string
+    productDesc?: string
+    cat?: string
   }
 }
 
 export default function AssistantPage({ searchParams }: AssistantPageProps) {
   const activeStandard = searchParams?.standard
   const activeTopic = searchParams?.topic
+  const activeProductName = searchParams?.productName
+  const activeProductDesc = searchParams?.productDesc
+  const activeCategory = searchParams?.cat
 
   const initialStandardContext: StandardContext | undefined = activeStandard
     ? {
         standardNumber: activeStandard,
         title: activeTopic || 'Indian Standard Specification',
+      }
+    : undefined
+
+  const initialProductContext: ProductContext | undefined = activeProductName
+    ? {
+        productName: activeProductName,
+        productDescription: activeProductDesc || activeProductName,
+        category: activeCategory || undefined,
       }
     : undefined
 
@@ -68,6 +82,7 @@ export default function AssistantPage({ searchParams }: AssistantPageProps) {
           <AssistantChatContainer
             mode="consumer"
             initialStandardContext={initialStandardContext}
+            initialProductContext={initialProductContext}
             headerTitle="BIS Standards & Regulations Assistant"
             headerDescription="Conversational Guidance for Indian Standards & Conformity"
           />

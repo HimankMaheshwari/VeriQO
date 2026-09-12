@@ -18,6 +18,7 @@ import {
   Scale,
   Award,
   FileCheck,
+  ScanLine,
 } from 'lucide-react'
 
 interface StandardDetailModalProps {
@@ -325,7 +326,35 @@ export function StandardDetailModal({
           </div>
         </div>
 
-        {/* Advisory Disclaimer Notice */}
+        {/* Legal Metrology Cross-Compliance Callout */}
+        <div
+          style={{
+            background: 'rgba(59, 130, 246, 0.08)',
+            border: '1px solid var(--border-default)',
+            borderRadius: 'var(--radius-md)',
+            padding: 'var(--space-3) var(--space-4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            flexWrap: 'wrap',
+            gap: 'var(--space-3)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10, maxWidth: 580 }}>
+            <Scale size={18} style={{ color: 'var(--brand-400)', flexShrink: 0, marginTop: 2 }} />
+            <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+              <strong style={{ color: 'var(--text-primary)' }}>Complementary Legal Metrology Compliance: </strong>
+              While this Indian Standard sets technical formulation and testing criteria, packaged consumer goods must also comply with the Legal Metrology (Packaged Commodities) Rules, 2011 for mandatory packaging declarations (MRP, net quantity, manufacturer address, and manufacturing date).
+            </div>
+          </div>
+          <Link href="/consumer/scan" style={{ textDecoration: 'none' }}>
+            <Button variant="secondary" size="sm" style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+              <ScanLine size={14} /> Verify Package Label
+            </Button>
+          </Link>
+        </div>
+
+        {/* Statutory Advisory Notice */}
         <div
           style={{
             background: 'rgba(245, 158, 11, 0.08)',

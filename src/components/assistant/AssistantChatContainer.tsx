@@ -33,6 +33,7 @@ import {
 interface AssistantChatContainerProps {
   mode?: AssistantMode
   initialStandardContext?: StandardContext
+  initialProductContext?: ProductContext
   headerTitle?: string
   headerDescription?: string
 }
@@ -40,6 +41,7 @@ interface AssistantChatContainerProps {
 export function AssistantChatContainer({
   mode = 'consumer',
   initialStandardContext,
+  initialProductContext,
   headerTitle,
   headerDescription,
 }: AssistantChatContainerProps) {
@@ -47,7 +49,9 @@ export function AssistantChatContainer({
   const [standardContext, setStandardContext] = useState<StandardContext | undefined>(
     initialStandardContext
   )
-  const [productContext, setProductContext] = useState<ProductContext | undefined>(undefined)
+  const [productContext, setProductContext] = useState<ProductContext | undefined>(
+    initialProductContext
+  )
   const [isProductModalOpen, setIsProductModalOpen] = useState(false)
 
   // Chat message states

@@ -40,11 +40,26 @@ const QUICK_EXAMPLES = [
   { label: '16A domestic plug & socket', query: 'plugs socket outlet', category: 'Electronics & IT' },
 ]
 
-export function StandardsDiscoveryClient() {
+export interface StandardsDiscoveryClientProps {
+  initialQuery?: string
+  initialCategory?: string
+  initialDescription?: string
+}
+
+export function StandardsDiscoveryClient({
+  initialQuery = '',
+  initialCategory,
+  initialDescription = '',
+}: StandardsDiscoveryClientProps = {}) {
+  const validCategory =
+    initialCategory && (STANDARDS_CATEGORIES as readonly string[]).includes(initialCategory)
+      ? initialCategory
+      : 'All Sectors'
+
   // Filter & Search states
-  const [query, setQuery] = useState('')
-  const [productDescription, setProductDescription] = useState('')
-  const [selectedCategory, setSelectedCategory] = useState<string>('All Sectors')
+  const [query, setQuery] = useState(initialQuery)
+  const [productDescription, setProductDescription] = useState(initialDescription)
+  const [selectedCategory, setSelectedCategory] = useState<string>(validCategory)
   const [qcoFilter, setQcoFilter] = useState<QcoFilterOption>('ALL')
   const [sortBy, setSortBy] = useState<SortOption>('RELEVANCE')
 

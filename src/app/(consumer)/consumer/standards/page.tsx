@@ -9,7 +9,15 @@ export const metadata = {
     'Search and browse Indian Standards (IS codes), mandatory Quality Control Orders (QCOs), testing specifications, and accredited laboratories.',
 }
 
-export default function StandardsPage() {
+interface StandardsPageProps {
+  searchParams?: {
+    q?: string
+    cat?: string
+    desc?: string
+  }
+}
+
+export default function StandardsPage({ searchParams }: StandardsPageProps) {
   return (
     <div>
       <PageHeader
@@ -28,7 +36,11 @@ export default function StandardsPage() {
       />
 
       {/* Main Interactive Standards Discovery Experience */}
-      <StandardsDiscoveryClient />
+      <StandardsDiscoveryClient
+        initialQuery={searchParams?.q}
+        initialCategory={searchParams?.cat}
+        initialDescription={searchParams?.desc}
+      />
     </div>
   )
 }

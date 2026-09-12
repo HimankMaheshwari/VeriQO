@@ -17,6 +17,7 @@ import {
   ExternalLink,
   ShieldCheck,
   AlertCircle,
+  ScanLine,
 } from 'lucide-react'
 
 interface StandardCardProps {
@@ -308,7 +309,18 @@ export function StandardCard({
           </div>
 
           {/* Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)', flexWrap: 'wrap' }}>
+            <Link href="/consumer/scan" style={{ textDecoration: 'none' }}>
+              <Button
+                variant="secondary"
+                size="sm"
+                title="Verify packaging declarations under Legal Metrology Rules, 2011"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <ScanLine size={14} /> Verify Label
+              </Button>
+            </Link>
+
             <Button
               variant="secondary"
               size="sm"

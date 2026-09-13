@@ -1,15 +1,17 @@
 import React from 'react'
 import { cx } from '@/lib/utils'
 
-type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'muted'
+type BadgeVariant = 'default' | 'success' | 'warning' | 'error' | 'info' | 'muted' | 'policy' | 'detection'
 
 const variantStyles: Record<BadgeVariant, React.CSSProperties> = {
-  default: { background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-strong)' },
-  success: { background: 'var(--color-success-bg)', color: 'var(--color-success-dark)', border: '1px solid var(--color-success)' },
-  warning: { background: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)', border: '1px solid var(--color-warning)' },
-  error:   { background: 'var(--color-error-bg)',   color: 'var(--color-error-dark)',   border: '1px solid var(--color-error)' },
-  info:    { background: 'var(--color-info-bg)',    color: 'var(--color-info-dark)',    border: '1px solid var(--color-info)' },
-  muted:   { background: 'var(--neutral-800)',      color: 'var(--text-muted)',         border: '1px solid var(--border-default)' },
+  default:   { background: 'var(--bg-elevated)', color: 'var(--text-primary)', border: '1px solid var(--border-strong)' },
+  success:   { background: 'var(--color-success-bg)', color: 'var(--color-success-dark)', border: '1px solid var(--color-success)' },
+  warning:   { background: 'var(--color-warning-bg)', color: 'var(--color-warning-dark)', border: '1px solid var(--color-warning)' },
+  error:     { background: 'var(--color-error-bg)',   color: 'var(--color-error-dark)',   border: '1px solid var(--color-error)' },
+  info:      { background: 'var(--color-info-bg)',    color: 'var(--color-info-dark)',    border: '1px solid var(--color-info)' },
+  muted:     { background: 'var(--neutral-800)',      color: 'var(--text-muted)',         border: '1px solid var(--border-default)' },
+  policy:    { background: 'var(--color-policy-bg)',  color: 'var(--color-policy)',        border: '1px solid rgba(99, 102, 241, 0.35)' },
+  detection: { background: 'var(--color-detection-bg)', color: 'var(--color-detection)',   border: '1px solid rgba(14, 165, 233, 0.35)' },
 }
 
 interface BadgeProps {
@@ -262,4 +264,130 @@ export function ViolationSeverityBadge({ severity }: { severity: string }) {
     CRITICAL: 'error',
   }
   return <Badge variant={map[severity] ?? 'default'}>{severity}</Badge>
+}
+
+// ── PS107 BIS Domain Regulatory Status Badges ───────────────────────────────
+
+/**
+ * MarkDetectionBadge
+ * Renders packaging / OCR mark detection presence.
+ * CRITICAL: DETECTED is informational (cyan/detection), NOT official verification.
+ */
+export function MarkDetectionBadge({ status, label }: { status: string; label?: string }) {
+  const isDetected = status === 'DETECTED'
+  const isNotDetected = status === 'NOT_DETECTED'
+
+  if (isDetected) {
+    return (
+      <Badge variant="detection" dot>
+        {label || 'Mark Detected'}
+      </Badge>
+    )
+  }
+  if (isNotDetected) {
+    return (
+      <Badge variant="muted">
+        {label || 'Not Detected'}
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="default">
+      {label || status}
+    </Badge>
+  )
+}
+
+/**
+ * RegistryVerificationBadge
+ * Renders authoritative BIS central registry / licence verification.
+ * Reserves green success strictly for authenticated, operative registry records.
+ */
+export function RegistryVerificationBadge({ status, label }: { status: string; label?: string }) {
+  const map: Record<string, BadgeVariant> = {
+    VERIFIED: 'success',
+    OPERATIVE: 'success',
+    NOT_VERIFIED: 'error',
+    INVALID: 'error',
+    EXPIRED: 'warning',
+    PENDING: 'default',
+    NEEDS_REVIEW: 'warning',
+  }
+  const defaultLabels: Record<string, string> = {
+    VERIFIED: 'Registry Verified',
+    OPERATIVE: 'Operative Licence',
+    NOT_VERIFIED: 'Unverified',
+    INVALID: 'Invalid Record',
+    EXPIRED: 'Expired Licence',
+    PENDING: 'Verification Pending',
+    NEEDS_REVIEW: 'Needs Review',
+  }
+  const variant = map[status] ?? 'default'
+  const text = label || defaultLabels[status] || status
+  return <Badge variant={variant} dot>{text}</Badge>
+}
+
+/**
+ * QcoRegimeBadge
+ * Renders Quality Control Order regulatory mandates.
+ * CRITICAL: Mandatory QCO is a statutory policy classification, NOT an error.
+ */
+export function QcoRegimeBadge({
+  isMandatory,
+  status,
+  label,
+}: {
+  isMandatory?: boolean
+  status?: string
+  label?: string
+}) {
+  if (isMandatory || status === 'APPLICABLE' || status === 'MANDATORY') {
+    return (
+      <Badge variant="policy" dot>
+        {label || 'Mandatory QCO in Force'}
+      </Badge>
+    )
+  }
+  if (status === 'NOT_YET_EFFECTIVE') {
+    return (
+      <Badge variant="warning">
+        {label || 'Not Yet Effective'}
+      </Badge>
+    )
+  }
+  if (status === 'NOT_APPLICABLE' || status === 'VOLUNTARY') {
+    return (
+      <Badge variant="default">
+        {label || 'Voluntary / No Mandatory QCO'}
+      </Badge>
+    )
+  }
+  return (
+    <Badge variant="default">
+      {label || 'QCO Not Determined'}
+    </Badge>
+  )
+}
+
+/**
+ * BisStatusBadge
+ * General BIS standard or commodity evaluation status wrapper.
+ */
+export function BisStatusBadge({ status, label }: { status: string; label?: string }) {
+  const map: Record<string, BadgeVariant> = {
+    OPERATIVE: 'success',
+    VERIFIED: 'success',
+    EXPIRED: 'warning',
+    CANCELLED: 'error',
+    SUSPENDED: 'error',
+    INVALID: 'error',
+    NOT_FOUND: 'error',
+    NEEDS_REVIEW: 'warning',
+    CLEAR: 'success',
+    POTENTIAL_NON_COMPLIANCE: 'error',
+    NOT_APPLICABLE: 'default',
+    NOT_DETERMINED: 'warning',
+    ASSOCIATED: 'success',
+  }
+  return <Badge variant={map[status] ?? 'default'} dot>{label || status.replace(/_/g, ' ')}</Badge>
 }

@@ -3,7 +3,7 @@
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { Card, CardBody } from '@/components/ui/Card'
-import { Badge } from '@/components/ui/Badge'
+import { Badge, QcoRegimeBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { type StandardDiscoveryItem } from '@/types/standards'
 import {
@@ -18,6 +18,7 @@ import {
   ShieldCheck,
   AlertCircle,
   ScanLine,
+  Layers,
 } from 'lucide-react'
 
 interface StandardCardProps {
@@ -72,11 +73,10 @@ export function StandardCard({
               {standard.standardNumber}
             </span>
 
-            {standard.isMandatoryQco ? (
-              <Badge variant="error" dot>Mandatory QCO</Badge>
-            ) : (
-              <Badge variant="default">Voluntary Standard</Badge>
-            )}
+            <QcoRegimeBadge
+              isMandatory={standard.isMandatoryQco}
+              label={standard.isMandatoryQco ? 'Mandatory QCO' : 'Voluntary Standard'}
+            />
 
             <Badge variant={matchVariant}>
               {standard.matchLevel} MATCH ({standard.matchScore}%)
@@ -330,13 +330,24 @@ export function StandardCard({
               <FileText size={14} /> View Details
             </Button>
 
-            <Link href={assistantUrl}>
+            <Link href={`/consumer/journey?standard=${encodeURIComponent(standard.standardNumber)}`} style={{ textDecoration: 'none' }}>
               <Button
                 variant="primary"
                 size="sm"
+                title="Trace end-to-end BIS Compliance Journey for this standard"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
               >
-                <Bot size={14} /> Ask BIS Assistant <ArrowRight size={13} />
+                <Layers size={14} /> Journey &rarr;
+              </Button>
+            </Link>
+
+            <Link href={assistantUrl}>
+              <Button
+                variant="secondary"
+                size="sm"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}
+              >
+                <Bot size={14} /> Ask Assistant
               </Button>
             </Link>
           </div>

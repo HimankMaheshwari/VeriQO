@@ -69,6 +69,7 @@ export interface TestingLaboratory {
   supportedStandards: string[]   // Array of IS codes, e.g. ["IS 14543", "IS 1061"]
   validUntil: string | Date
   status: 'ACTIVE' | 'SUSPENDED'
+  isDemoData?: boolean
 }
 
 export interface HallmarkingGuideline {

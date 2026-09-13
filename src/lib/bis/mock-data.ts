@@ -236,6 +236,67 @@ export const DEMO_STANDARDS: BisStandardDetail[] = [
       },
     ],
   },
+  {
+    id: 'demo-std-is-17526-2021',
+    standardNumber: 'IS 17526:2021',
+    title:
+      'Commercial and Domestic Stainless Steel Vacuum Flasks and Insulated Water Bottles — Specification [DEMO TEST RECORD]',
+    description:
+      'Prescribes requirements and methods of sampling and test for domestic and commercial stainless steel vacuum flasks, insulated water bottles, and containers for food and drinks.',
+    edition: 'First Edition',
+    year: 2021,
+    status: 'ACTIVE',
+    division: 'MED',
+    icsCode: '97.040.60',
+    isMandatory: true,
+    mandatedByQco: 'Insulated Flask, Bottle and Container for Domestic Use (Quality Control) Order, 2023',
+    clausesCount: 3,
+    createdAt: new Date('2024-01-01T00:00:00.000Z').toISOString(),
+    updatedAt: new Date('2024-01-01T00:00:00.000Z').toISOString(),
+    clauses: [
+      {
+        id: 'demo-clause-17526-5-1',
+        standardId: 'demo-std-is-17526-2021',
+        clauseNumber: '5.1',
+        title: 'Thermal Performance / Insulation Retention Test',
+        content:
+          'Thermal insulation test: filled with boiling water at 95°C, temperature after 6 hours must remain not less than 65°C. For cold liquid test at 4°C, temperature after 6 hours must not exceed 10°C.',
+        isMandatory: true,
+        clauseType: 'SPECIFICATION',
+        limits: [
+          { parameter: 'Hot retention (6h from 95°C)', requirement: 'Min 65.0', unit: '°C' },
+          { parameter: 'Cold retention (6h from 4°C)', requirement: 'Max 10.0', unit: '°C' },
+        ],
+        orderIndex: 1,
+      },
+      {
+        id: 'demo-clause-17526-6-2',
+        standardId: 'demo-std-is-17526-2021',
+        clauseNumber: '6.2',
+        title: 'Drop Impact and Structural Mechanical Resistance',
+        content:
+          'The complete insulated flask or bottle shall be subjected to vertical drop test from 1.0 metre height onto a flat concrete slab. Must exhibit zero liquid leakage, zero vacuum seal rupture, and zero detached components.',
+        isMandatory: true,
+        clauseType: 'SAFETY_REQUIREMENT',
+        limits: [
+          { parameter: 'Drop Height', requirement: '1.0 metre onto concrete', unit: 'm' },
+          { parameter: 'Leakage Post-Drop', requirement: 'Zero liquid seepage', unit: 'Visual' },
+        ],
+        orderIndex: 2,
+      },
+      {
+        id: 'demo-clause-17526-7-1',
+        standardId: 'demo-std-is-17526-2021',
+        clauseNumber: '7.1',
+        title: 'Food-Grade Stainless Steel Contact Surface & ISI Marking',
+        content:
+          'All metal parts coming in direct contact with beverages shall be manufactured from food-grade Austenitic Stainless Steel conforming to IS 6911 (SS 304 or equivalent). The product and packaging must bear the Standard Mark (ISI mark) under Scheme-I with CM/L license number.',
+        isMandatory: true,
+        clauseType: 'PACKAGING_MARKING',
+        orderIndex: 3,
+      },
+    ],
+  },
 ]
 
 export const DEMO_LICENSES: LicenseVerificationResult[] = [
@@ -355,6 +416,22 @@ export const DEMO_QCOS: QualityControlOrderItem[] = [
     isExemptionApplicable: false,
     exemptionDetails: null,
     gazetteUrl: 'https://heavyindustries.gov.in/qco-plugs-2021.pdf',
+    isDemoRecord: true,
+  },
+  {
+    id: 'demo-qco-insulated-flask-2023',
+    orderTitle: 'Insulated Flask, Bottle and Container for Domestic Use (Quality Control) Order, 2023 [DEMO/OFFICIAL REF]',
+    orderNumber: 'S.O. 4532(E)',
+    ministry: 'Ministry of Commerce and Industry (DPIIT)',
+    notifiedDate: '2023-10-18T00:00:00.000Z',
+    effectiveDate: '2024-04-15T00:00:00.000Z',
+    status: 'IN_FORCE',
+    standardNumber: 'IS 17526:2021',
+    applicableProducts: 'Domestic and commercial vacuum flasks, stainless steel insulated bottles, and insulated beverage containers.',
+    hsCodes: ['961700', '96170011', '96170012'],
+    isExemptionApplicable: true,
+    exemptionDetails: 'Articles manufactured by micro and small enterprises or meant solely for export are subject to phased compliance.',
+    gazetteUrl: 'https://dpiit.gov.in/qco-insulated-flask-2023.pdf',
     isDemoRecord: true,
   },
 ]

@@ -15,12 +15,62 @@ import { BisStandardsService } from '@/lib/bis/standards-service'
 import { BisKnowledgeService, defaultBisKnowledgeService } from '@/lib/bis/knowledge/knowledge-service'
 import type { CandidateStandardAssociation } from '@/types/bis-inspection'
 
+// Generic descriptor words that must NOT by themselves create a substantive standard association
+const GENERIC_DESCRIPTORS = new Set([
+  'household',
+  'commercial',
+  'industrial',
+  'general',
+  'standard',
+  'standards',
+  'purpose',
+  'purposes',
+  'packaged',
+  'commodity',
+  'commodities',
+  'liquid',
+  'solid',
+  'concentrated',
+  'gel',
+  'powder',
+  'material',
+  'materials',
+  'product',
+  'products',
+  'device',
+  'devices',
+  'system',
+  'systems',
+  'other',
+  'similar',
+  'equipment',
+  'item',
+  'items',
+  'good',
+  'goods',
+  'pack',
+  'package',
+  'packaging',
+  'specification',
+  'specifications',
+  'requirement',
+  'requirements',
+  'quality',
+  'control',
+  'order',
+])
+
 export interface StandardAssociationInput {
   detectedStandardNumber?: string | null
   productName?: string | null
   category?: string | null
   brand?: string | null
   rawOcrText?: string | null
+  extractedDeclarations?: Array<{
+    fieldName: string
+    rawValue: string | null
+    normalizedValue: string | null
+  }> | null
 }
 
 export class StandardAssociator {
@@ -37,6 +87,7 @@ export class StandardAssociator {
 
   /**
    * Associates a product inspection with candidate Indian Standards based on evidence.
+   * Prioritizes substantive commodity relevance over generic lexical overlap.
    */
   async associateStandards(input: StandardAssociationInput): Promise<CandidateStandardAssociation[]> {
     const candidates: CandidateStandardAssociation[] = []
@@ -66,33 +117,53 @@ export class StandardAssociator {
       }
     }
 
-    // 2. Category & Product Name search across structured BIS catalog
-    const rawTerms = [input.productName, input.category, input.brand]
+    // 2. Extract substantive commodity terms (filtering out generic descriptor tokens)
+    const rawTerms = [input.productName, input.category]
       .filter((t): t is string => Boolean(t && t.trim().length > 2))
       .map((t) => t.trim())
 
-    const subTokens = rawTerms
-      .flatMap((t) => t.split(/[\s,/]+/).filter((w) => w.length >= 4))
-    const queryTerms = Array.from(new Set([...rawTerms, ...subTokens]))
+    const inputSubstantiveTokens = rawTerms
+      .flatMap((t) => t.toLowerCase().split(/[\s,/._-]+/))
+      .filter((w) => w.length >= 3 && !GENERIC_DESCRIPTORS.has(w))
 
-    if (queryTerms.length > 0) {
-      for (const term of queryTerms) {
+    // If no substantive commodity terms exist (e.g. only "Household" or "Liquid"), do not search catalog blindly
+    if (inputSubstantiveTokens.length > 0) {
+      // Form substantive search queries (e.g. "toys", "drinking water", "plugs")
+      const substantiveQueries = Array.from(new Set(inputSubstantiveTokens))
+
+      for (const term of substantiveQueries) {
         try {
           const searchResult = await this.standardsService.searchStandards({
             q: term,
-            pageSize: 3,
+            pageSize: 5,
           })
 
           for (const std of searchResult.standards) {
-            // Check if already in candidates
-            if (!candidates.some((c) => c.standardNumber === std.standardNumber)) {
+            if (candidates.some((c) => c.standardNumber === std.standardNumber)) {
+              continue
+            }
+
+            // Extract substantive tokens from standard title & description
+            const stdTitleTokens = `${std.title} ${(std as any).description || ''}`
+              .toLowerCase()
+              .split(/[\s,/._-]+/)
+              .filter((w) => w.length >= 3 && !GENERIC_DESCRIPTORS.has(w))
+
+            // Check substantive overlap: at least one core commodity term must match
+            const overlap = inputSubstantiveTokens.filter((token) =>
+              stdTitleTokens.some((st) => st.includes(token) || token.includes(st))
+            )
+
+            // Strictly require substantive overlap — matching only generic words like "household" is rejected
+            if (overlap.length > 0) {
+              const relevance = Math.min(0.95, Math.max(0.65, overlap.length / Math.min(inputSubstantiveTokens.length, 3)))
               const isDemoRecord = (std as any).isDemoRecord ?? true
               candidates.push({
                 standardNumber: std.standardNumber,
                 title: std.title,
-                relevance: 0.8,
-                matchReason: `Catalog match: product descriptor "${term}" matches standard scope`,
-                supportingEvidence: `Identified product description matches Indian Standard title: "${std.title}"`,
+                relevance: Math.round(relevance * 100) / 100,
+                matchReason: `Substantive commodity match: "${overlap.join(', ')}" corresponds to Indian Standard scope`,
+                supportingEvidence: `Product commodity concept matches Indian Standard: "${std.title}"`,
                 clauseReferences: [],
                 chunkReferences: [],
                 isDemoRecord,
@@ -106,28 +177,39 @@ export class StandardAssociator {
       }
     }
 
-    // 3. Knowledge retrieval search for high-relevance chunks
-    if (candidates.length === 0 && (input.productName || input.category || explicitNumber)) {
-      const searchQuery = explicitNumber || `${input.productName || ''} ${input.category || ''}`.trim()
+    // 3. Knowledge retrieval search for high-relevance chunks (only if substantive terms exist)
+    if (candidates.length === 0 && inputSubstantiveTokens.length > 0) {
+      const searchQuery = inputSubstantiveTokens.join(' ')
       try {
         const chunkResults = await this.knowledgeService.searchKnowledge({
           query: searchQuery,
           limit: 3,
         })
 
-        if (chunkResults.length > 0 && chunkResults[0].relevanceScore >= 0.7) {
+        if (chunkResults.length > 0 && chunkResults[0].relevanceScore >= 0.75) {
           const topChunk = chunkResults[0]
-          candidates.push({
-            standardNumber: topChunk.standardNumber,
-            title: topChunk.title || topChunk.standardNumber,
-            relevance: Math.round(topChunk.relevanceScore * 100) / 100,
-            matchReason: `Knowledge-base semantic match: retrieved evidence for ${topChunk.standardNumber}`,
-            supportingEvidence: `Statutory chunk ${topChunk.clauseNumber || topChunk.chunkId} matches query "${searchQuery}"`,
-            clauseReferences: topChunk.clauseNumber ? [topChunk.clauseNumber] : [],
-            chunkReferences: [topChunk.chunkId],
-            isDemoRecord: topChunk.isDemoRecord ?? true,
-            state: 'ASSOCIATED',
-          })
+          const chunkTokens = `${topChunk.title} ${topChunk.relevantText}`
+            .toLowerCase()
+            .split(/[\s,/._-]+/)
+            .filter((w) => w.length >= 3 && !GENERIC_DESCRIPTORS.has(w))
+
+          const hasSubstantiveChunkOverlap = inputSubstantiveTokens.some((t) =>
+            chunkTokens.some((ct) => ct.includes(t) || t.includes(ct))
+          )
+
+          if (hasSubstantiveChunkOverlap) {
+            candidates.push({
+              standardNumber: topChunk.standardNumber,
+              title: topChunk.title || topChunk.standardNumber,
+              relevance: Math.round(topChunk.relevanceScore * 100) / 100,
+              matchReason: `Knowledge-base substantive match: retrieved evidence for ${topChunk.standardNumber}`,
+              supportingEvidence: `Statutory clause ${topChunk.clauseNumber || topChunk.chunkId} matches commodity query "${searchQuery}"`,
+              clauseReferences: topChunk.clauseNumber ? [topChunk.clauseNumber] : [],
+              chunkReferences: [topChunk.chunkId],
+              isDemoRecord: topChunk.isDemoRecord ?? true,
+              state: 'ASSOCIATED',
+            })
+          }
         }
       } catch {
         // Fall through
@@ -138,7 +220,7 @@ export class StandardAssociator {
     if (explicitNumber && candidates.length === 0) {
       candidates.push({
         standardNumber: explicitNumber,
-        title: 'Unknown Standard Reference',
+        title: 'Uncatalogued Standard Claimed',
         relevance: 0.3,
         matchReason: `Packaging claims "${explicitNumber}", but standard was not found in the verified BIS catalog`,
         supportingEvidence: `Detected text claims ${explicitNumber}, requiring officer verification`,
@@ -150,18 +232,18 @@ export class StandardAssociator {
       return candidates
     }
 
-    // 5. If no candidate could be identified
+    // 5. If no candidate could be identified with sufficient confidence: NOT DETERMINED / NEEDS REVIEW
     if (candidates.length === 0) {
       candidates.push({
-        standardNumber: 'UNKNOWN',
-        title: 'No Indian Standard Associated',
+        standardNumber: 'NOT_DETERMINED',
+        title: 'No Applicable Indian Standard Identified',
         relevance: 0.0,
-        matchReason: 'Insufficient packaging evidence to associate an Indian Standard',
+        matchReason: 'Insufficient evidence to associate an Indian Standard',
         supportingEvidence: 'Neither an explicit IS number nor a recognized BIS standard commodity category was detected',
         clauseReferences: [],
         chunkReferences: [],
         isDemoRecord: false,
-        state: 'UNKNOWN',
+        state: 'NEEDS_REVIEW',
       })
     }
 

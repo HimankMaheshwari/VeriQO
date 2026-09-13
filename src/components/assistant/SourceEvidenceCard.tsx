@@ -54,7 +54,7 @@ export function SourceEvidenceCard({ source }: SourceEvidenceCardProps) {
           </span>
 
           {source.isMandatoryQco && (
-            <Badge variant="error" dot>Mandatory QCO</Badge>
+            <Badge variant="policy" dot>Mandatory QCO</Badge>
           )}
         </div>
 

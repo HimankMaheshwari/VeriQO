@@ -45,6 +45,11 @@ export interface AuthorityVerificationService {
     category?: string | null
   ): QcoReferenceInfo
 
+  fetchQcoReferenceForProduct(
+    productName: string,
+    category?: string | null
+  ): Promise<QcoReferenceInfo>
+
   getTraceabilityEvidenceItems(
     inspectionId: string,
     scanId?: string | null,
@@ -55,3 +60,4 @@ export interface AuthorityVerificationService {
     inspectionId: string
   ): OfficerVerificationRecord
 }
+

@@ -32,7 +32,7 @@ export class BisFindingsEngine {
   generateFindings(input: FindingsEngineInput): { findings: BisFinding[]; overallStatus: BisFindingStatus } {
     const findings: BisFinding[] = []
 
-    const qco = input.qcoChecks[0] || null
+    const qco = input.qcoChecks?.[0] || (input as any).qcoResult || null
     const topStandard = input.candidateStandards[0] || null
     const cmlId = input.identifiers.find((i) => i.type === 'CML_NUMBER')
     const crsId = input.identifiers.find((i) => i.type === 'CRS_REGISTRATION')
@@ -47,7 +47,7 @@ export class BisFindingsEngine {
       input.identifiers.some((i) => i.isDemoRecord)
 
     // ── SCENARIO 1: MANDATORY QCO IN FORCE ─────────────────────────────────────
-    if (qco && qco.status === 'APPLICABLE') {
+    if (qco && qco.status === 'APPLICABLE' && qco.isMandatoryCertification === true) {
       const standardRef = qco.applicableStandards[0] || topStandard?.standardNumber || null
 
       if (!cmlId || cmlId.state === 'NOT_DETECTED') {
@@ -199,18 +199,23 @@ export class BisFindingsEngine {
             isDemoRecord: crsVerification.isDemoRecord,
           })
         }
-      } else if (topStandard && topStandard.state === 'NEEDS_REVIEW') {
+      } else if (topStandard && (topStandard.state === 'NEEDS_REVIEW' || topStandard.standardNumber === 'NOT_DETERMINED')) {
+        const isNotDetermined = topStandard.standardNumber === 'NOT_DETERMINED'
         findings.push({
           domain: 'BIS',
           status: 'NEEDS_REVIEW',
-          severity: 'LOW',
-          code: 'BIS_UNVERIFIED_STANDARD_CLAIM',
-          title: 'Unverified Indian Standard Reference',
-          explanation: `Packaging cites "${topStandard.standardNumber}", which could not be matched with active catalog records.`,
-          recommendation: 'Officer to manually verify if standard has been revised or withdrawn.',
-          evidence: topStandard.supportingEvidence,
-          standardReference: topStandard.standardNumber,
-          verificationResult: 'NEEDS_REVIEW',
+          severity: isNotDetermined ? 'INFO' : 'LOW',
+          code: isNotDetermined ? 'BIS_NO_MANDATORY_QCO' : 'BIS_UNVERIFIED_STANDARD_CLAIM',
+          title: isNotDetermined ? 'No Mandatory Quality Control Order Applicable' : 'Unverified Indian Standard Reference',
+          explanation: isNotDetermined
+            ? 'Commodity does not fall under an active mandatory Quality Control Order (QCO). Indian Standard is not determined; voluntary certification may apply. Officer verification pending.'
+            : `Packaging cites "${topStandard.standardNumber}", which could not be matched with active catalog records.`,
+          recommendation: isNotDetermined
+            ? 'No mandatory BIS certification required. Voluntary BIS ISI mark may be sought by manufacturer. Pending officer verification.'
+            : 'Officer to manually verify if standard has been revised or withdrawn.',
+          evidence: topStandard.supportingEvidence || 'Commodity classification evaluated; no mandatory QCO schedule matched.',
+          standardReference: isNotDetermined ? null : topStandard.standardNumber,
+          verificationResult: isNotDetermined ? 'NOT_DETERMINED' : 'NEEDS_REVIEW',
           isDemoRecord: isAnyDemo,
         })
       } else {

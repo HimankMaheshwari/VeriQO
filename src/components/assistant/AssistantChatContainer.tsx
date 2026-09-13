@@ -39,6 +39,7 @@ interface AssistantChatContainerProps {
   initialProductContext?: ProductContext
   headerTitle?: string
   headerDescription?: string
+  initialQuery?: string
 }
 
 export function AssistantChatContainer({
@@ -47,6 +48,7 @@ export function AssistantChatContainer({
   initialProductContext,
   headerTitle,
   headerDescription,
+  initialQuery,
 }: AssistantChatContainerProps) {
   // Context states
   const [standardContext, setStandardContext] = useState<StandardContext | undefined>(
@@ -62,7 +64,7 @@ export function AssistantChatContainer({
 
   // Chat message states
   const [messages, setMessages] = useState<AssistantMessage[]>([])
-  const [inputValue, setInputValue] = useState('')
+  const [inputValue, setInputValue] = useState(initialQuery || '')
   const [isLoading, setIsLoading] = useState(false)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
 

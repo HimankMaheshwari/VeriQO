@@ -84,11 +84,26 @@ export function AuthorityVerificationPanel({
   // RBAC Permission Check
   const canVerify = ['AUTHORITY_OFFICER', 'SENIOR_AUTHORITY', 'ADMIN'].includes(userRole)
 
-  // Retrieve QCO reference info from isolated verification service
-  const qcoInfo: QcoReferenceInfo = authorityVerificationService.getQcoReferenceForProduct(
-    productName,
-    category
+  // Retrieve QCO reference info from isolated verification service with live API enhancement
+  const [qcoInfo, setQcoInfo] = useState<QcoReferenceInfo>(() =>
+    authorityVerificationService.getQcoReferenceForProduct(productName, category)
   )
+
+  React.useEffect(() => {
+    let active = true
+    authorityVerificationService
+      .fetchQcoReferenceForProduct(productName, category)
+      .then((info) => {
+        if (active && info) {
+          setQcoInfo(info)
+        }
+      })
+      .catch((err) => console.warn('Could not fetch live QCO info:', err))
+    return () => {
+      active = false
+    }
+  }, [productName, category])
+
 
   // Retrieve Traceability Evidence Items
   const evidenceItems: VerificationEvidenceItem[] =
@@ -237,12 +252,12 @@ export function AuthorityVerificationPanel({
                   Bureau of Indian Standards (BIS) &amp; QCO Cross-Reference
                 </span>
               </div>
-              {qcoInfo.standardNumber === 'Not available in demo data' ? (
-                <Badge variant="warning">Catalog Sync Pending</Badge>
+              {qcoInfo.standardNumber === 'Not available in demo data' || qcoInfo.standardNumber === 'NOT DETERMINED' || qcoInfo.standardNumber === 'NOT_DETERMINED' ? (
+                <Badge variant="default">Voluntary / No Mandatory QCO Identified</Badge>
               ) : qcoInfo.isMandatory ? (
-                <Badge variant="error" dot>Mandatory QCO Enforced</Badge>
+                <Badge variant="policy" dot>Mandatory QCO Enforced</Badge>
               ) : (
-                <Badge variant="default">Demo Cross-Reference</Badge>
+                <Badge variant="default">Voluntary / No Mandatory QCO Identified</Badge>
               )}
             </div>
 
@@ -264,7 +279,7 @@ export function AuthorityVerificationPanel({
                     marginTop: 2,
                   }}
                 >
-                  {qcoInfo.standardNumber}
+                  {qcoInfo.standardNumber === 'NOT_DETERMINED' ? 'NOT DETERMINED' : qcoInfo.standardNumber}
                 </div>
                 <div style={{ color: 'var(--text-secondary)', marginTop: 2 }}>{qcoInfo.standardTitle}</div>
               </div>
@@ -285,7 +300,9 @@ export function AuthorityVerificationPanel({
               </div>
             </div>
 
-            {qcoInfo.standardNumber === 'Not available in demo data' && (
+            {(qcoInfo.standardNumber === 'Not available in demo data' ||
+              qcoInfo.standardNumber === 'NOT DETERMINED' ||
+              qcoInfo.standardNumber === 'NOT_DETERMINED') && (
               <div
                 style={{
                   marginTop: 'var(--space-3)',
@@ -298,8 +315,8 @@ export function AuthorityVerificationPanel({
                   lineHeight: 1.4,
                 }}
               >
-                <strong>Live Registry Status: </strong>
-                Specific standard cross-reference not identified in current demo catalog for &ldquo;{productName}&rdquo;. Live BIS central registry integration will populate this automatically. Officers may manually verify ISI/CRS marks using the checklist below.
+                <strong>BIS Regulatory Status: </strong>
+                No mandatory Quality Control Order (QCO) identified for &ldquo;{productName}&rdquo;. Voluntary BIS certification may apply; statutory BIS certification is not compulsory. Officers may manually verify ISI/CRS marks using the checklist below if claimed on packaging.
               </div>
             )}
           </div>

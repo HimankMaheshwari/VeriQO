@@ -636,6 +636,69 @@ export const AUTHENTIC_STANDARDS_CATALOG: StandardDiscoveryItem[] = [
       ministryOrDepartment: 'Ministry of Consumer Affairs & FSSAI',
     },
   },
+  {
+    id: 'is-17526',
+    standardNumber: 'IS 17526:2021',
+    title: 'Commercial and Domestic Stainless Steel Vacuum Flasks and Insulated Containers — Specification',
+    year: 2021,
+    category: 'Mechanical & Automotive',
+    isMandatoryQco: true,
+    qcoNotificationNumber: 'S.O. 4532(E)',
+    status: 'ACTIVE',
+    shortDescription:
+      'Prescribes statutory design, thermal insulation retention, drop impact strength, and food-grade stainless steel material requirements for insulated water bottles and vacuum flasks.',
+    scope:
+      'Applies to insulated water bottles, domestic vacuum flasks, and insulated beverage containers constructed from food-grade austenitic stainless steel. Compulsory compliance under BIS Scheme I (ISI Mark) notified by DPIIT under the Insulated Flask, Bottle and Container for Domestic Use (Quality Control) Order, 2023.',
+    criticalParameters: [
+      'Thermal Insulation Retention (Hot: >= 65°C / Cold: <= 10°C after 6h)',
+      'Drop Impact Resistance (1.0m drop onto concrete slab)',
+      'Food Contact Stainless Steel Grade (SS 304 per IS 6911)',
+      'Cap Seal and Leakage Test',
+      'Tamper-evident ISI Marking & License Number',
+    ],
+    clauses: [
+      {
+        clauseNumber: 'Clause 5.1',
+        title: 'Thermal Performance / Insulation Retention Test',
+        description: 'Filled with boiling water at 95°C, temperature after 6 hours must remain not less than 65°C. For cold liquid test at 4°C, temperature after 6 hours must not exceed 10°C.',
+        testingMethod: 'Calibrated thermocouple thermal decay assay',
+        prescribedTolerance: 'Hot: Min 65.0°C | Cold: Max 10.0°C',
+        isMandatoryCheck: true,
+      },
+      {
+        clauseNumber: 'Clause 6.2',
+        title: 'Drop Impact and Structural Mechanical Resistance',
+        description: 'Subjected to vertical drop test from 1.0 metre height onto a flat concrete slab. Must exhibit zero liquid leakage, zero vacuum seal rupture, and zero detached components.',
+        testingMethod: '1.0m free-fall impact test',
+        prescribedTolerance: 'Zero leakage, structural integrity maintained',
+        isMandatoryCheck: true,
+      },
+      {
+        clauseNumber: 'Clause 7.1',
+        title: 'Food-Grade Stainless Steel Contact Surface & ISI Marking',
+        description: 'All metal parts in direct contact with beverages shall be manufactured from food-grade Austenitic Stainless Steel conforming to IS 6911 (SS 304). The product and packaging must bear the Standard Mark (ISI mark) under Scheme-I with CM/L license number.',
+        testingMethod: 'Spectroscopic elemental composition per IS 6911',
+        prescribedTolerance: 'Austenitic SS 304 / Grade 1Cr18Ni9',
+        isMandatoryCheck: true,
+      },
+    ],
+    applicableCommodities: [
+      'Stainless steel vacuum flasks and thermos bottles',
+      'Insulated stainless steel water bottles and hydration flasks',
+      'Double-wall vacuum insulated containers',
+    ],
+    applicableScheme: 'SCHEME_I',
+    accreditedLabCount: 18,
+    labCount: 18,
+    matchScore: 92,
+    matchLevel: 'HIGH',
+    officialSource: {
+      gazetteNumber: 'S.O. 4532(E)',
+      bisPortalUrl: 'https://www.services.bis.gov.in/php/BIS_2.0/bisconnect/knowyourstandards/is_details/17526',
+      yearOfPublication: 2021,
+      ministryOrDepartment: 'Ministry of Commerce and Industry (DPIIT)',
+    },
+  },
 ]
 
 /**
@@ -643,6 +706,7 @@ export const AUTHENTIC_STANDARDS_CATALOG: StandardDiscoveryItem[] = [
  */
 const KEYWORD_SYNONYM_MAP: Record<string, string[]> = {
   water: ['drinking', 'mineral', 'bottle', 'bottled', 'packaged', 'jar', 'bubble', 'aquifer', 'pouch', 'reverse', 'osmosis', 'ro'],
+  flask: ['thermos', 'vacuum', 'insulated', 'bottle', 'stainless', 'steel', 'flask', 'beverage', 'container', 'hydration'],
   led: ['lamp', 'bulb', 'lighting', 'light', 'lumens', 'watt', 'b22', 'e27', 'tubelight', 'illumination', 'diode'],
   gold: ['jewellery', 'jewelry', 'ornament', 'hallmark', 'huid', '22k', '18k', '24k', '916', 'purity', 'carat', 'karat'],
   silver: ['jewellery', 'jewelry', 'utensil', 'hallmark', '925', 'sterling', 'fineness', 'metal', 'anklet'],
@@ -757,31 +821,143 @@ function calculateMatch(
 }
 
 /**
- * Standard Discovery Service Implementation
+ * Real API Standard Discovery Service Implementation
+ * Calls /api/v1/bis/standards and /api/v1/bis/standards/[id]
  */
-export class MockStandardsDiscoveryService implements StandardsDiscoveryService {
-  private catalog: StandardDiscoveryItem[]
+export class ApiStandardsDiscoveryService implements StandardsDiscoveryService {
+  private fallbackCatalog: StandardDiscoveryItem[]
 
-  constructor(initialCatalog: StandardDiscoveryItem[] = AUTHENTIC_STANDARDS_CATALOG) {
-    this.catalog = initialCatalog
+  constructor(fallbackCatalog: StandardDiscoveryItem[] = AUTHENTIC_STANDARDS_CATALOG) {
+    this.fallbackCatalog = fallbackCatalog
   }
 
   public async searchStandards(
     filters: Partial<StandardsFilterState>
   ): Promise<StandardsDiscoveryResult> {
-    // Small latency to reflect async operation and demonstrate loading state
-    await new Promise((res) => setTimeout(res, 60))
-
     const query = (filters.query || '').trim()
     const description = (filters.productDescription || '').trim()
     const category = filters.category || 'All Sectors'
     const qcoType = filters.qcoType || 'ALL'
     const sortBy = filters.sortBy || 'RELEVANCE'
-
     const hasSearched = Boolean(query || description || (category && category !== 'All Sectors') || qcoType !== 'ALL')
 
-    // Filter and score
-    let results = this.catalog.map((item) => {
+    try {
+      const params = new URLSearchParams()
+      const searchTarget = query || description
+      if (searchTarget) {
+        params.set('q', searchTarget)
+      }
+      if (qcoType === 'MANDATORY') {
+        params.set('isMandatory', 'true')
+      } else if (qcoType === 'VOLUNTARY') {
+        params.set('isMandatory', 'false')
+      }
+      params.set('page', '1')
+      params.set('pageSize', '50')
+
+      const response = await fetch(`/api/v1/bis/standards?${params.toString()}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (response.ok) {
+        const json = await response.json()
+        const apiStandards: any[] = json.data?.standards || []
+
+        if (apiStandards.length > 0) {
+          let mapped: StandardDiscoveryItem[] = apiStandards.map((item: any) => {
+            // Find fallback item for rich clause details if available
+            const fallback = this.fallbackCatalog.find(
+              (f) => f.standardNumber.toLowerCase() === item.standardNumber.toLowerCase()
+            )
+
+            const isMandatory = item.isMandatory || item.mandatedByQco != null
+            const matchScore = searchTarget
+              ? calculateMatch(fallback || { ...item, criticalParameters: [], applicableCommodities: [] } as any, query, description).score
+              : (isMandatory ? 92 : 75)
+
+            const matchLevel: MatchLevel = matchScore >= 80 ? 'HIGH' : matchScore >= 50 ? 'MEDIUM' : 'LOW'
+
+            return {
+              id: item.id || item.standardNumber,
+              standardNumber: item.standardNumber,
+              title: item.title,
+              year: item.year || 2020,
+              category: item.category || item.division || fallback?.category || 'General',
+              isMandatoryQco: isMandatory,
+              qcoNotificationNumber: item.mandatedByQco || fallback?.qcoNotificationNumber,
+              status: (item.status as any) || 'ACTIVE',
+              shortDescription: item.scope || item.description || fallback?.shortDescription || item.title,
+              scope: item.scope || item.description || fallback?.scope || item.title,
+              criticalParameters: fallback?.criticalParameters || ['Conformity Specifications', 'Quality Tolerances'],
+              clauses: fallback?.clauses || [],
+              applicableCommodities: fallback?.applicableCommodities || [item.title],
+              applicableScheme: isMandatory ? 'SCHEME_I' : 'SCHEME_II',
+              accreditedLabCount: fallback?.accreditedLabCount || 10,
+              labCount: fallback?.labCount || 10,
+              matchScore,
+              matchLevel,
+              reasoning: {
+                summary: isMandatory
+                  ? `Mandatory compliance enforced by Quality Control Order (${item.mandatedByQco || 'Central Gazette'}).`
+                  : 'Voluntary Standard published by Bureau of Indian Standards.',
+                matchedKeywords: searchTarget ? searchTarget.toLowerCase().split(/\s+/) : [],
+                applicabilityNotes: `Applicable to: ${item.title}`,
+                regulatoryStatusNote: isMandatory ? 'Mandatory under QCO Gazette' : 'Voluntary Standard',
+              },
+              officialSource: {
+                gazetteNumber: item.mandatedByQco || fallback?.officialSource.gazetteNumber,
+                bisPortalUrl: item.sourceUrl || fallback?.officialSource.bisPortalUrl || 'https://www.services.bis.gov.in',
+                yearOfPublication: item.year || 2020,
+                ministryOrDepartment: fallback?.officialSource.ministryOrDepartment || 'Bureau of Indian Standards',
+              },
+              documentReferenceUrl: item.sourceUrl || fallback?.documentReferenceUrl,
+            }
+          })
+
+          // Filter by category if requested
+          if (category && category !== 'All Sectors') {
+            const filtered = mapped.filter((item) =>
+              item.category.toLowerCase().includes(category.toLowerCase())
+            )
+            if (filtered.length > 0) mapped = filtered
+          }
+
+          // Sorting
+          mapped.sort((a, b) => {
+            if (sortBy === 'RELEVANCE') return b.matchScore - a.matchScore
+            if (sortBy === 'STANDARD_ASC') return a.standardNumber.localeCompare(b.standardNumber)
+            if (sortBy === 'YEAR_DESC') return b.year - a.year
+            return 0
+          })
+
+          return {
+            items: mapped,
+            totalCount: json.data?.total || mapped.length,
+            hasSearched,
+            appliedQuery: query,
+            appliedDescription: description,
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Backend /api/v1/bis/standards fetch failed, falling back to local catalog:', err)
+    }
+
+    // Graceful fallback to local catalog
+    return this.searchFallbackCatalog(filters, query, description, category, qcoType, sortBy, hasSearched)
+  }
+
+  private searchFallbackCatalog(
+    filters: Partial<StandardsFilterState>,
+    query: string,
+    description: string,
+    category: string,
+    qcoType: string,
+    sortBy: string,
+    hasSearched: boolean
+  ): StandardsDiscoveryResult {
+    let results = this.fallbackCatalog.map((item) => {
       const matchResult = calculateMatch(item, query, description)
       return {
         ...item,
@@ -798,34 +974,24 @@ export class MockStandardsDiscoveryService implements StandardsDiscoveryService 
       }
     })
 
-    // Filter by category
     if (category && category !== 'All Sectors') {
       results = results.filter((item) => item.category.toLowerCase() === category.toLowerCase())
     }
 
-    // Filter by QCO Status
     if (qcoType === 'MANDATORY') {
       results = results.filter((item) => item.isMandatoryQco)
     } else if (qcoType === 'VOLUNTARY') {
       results = results.filter((item) => !item.isMandatoryQco)
     }
 
-    // If a specific query or description was provided, filter out zero-token low matches
     if (query || description) {
       results = results.filter((item) => item.matchScore > 25)
     }
 
-    // Sorting
     results.sort((a, b) => {
-      if (sortBy === 'RELEVANCE') {
-        return b.matchScore - a.matchScore
-      }
-      if (sortBy === 'STANDARD_ASC') {
-        return a.standardNumber.localeCompare(b.standardNumber)
-      }
-      if (sortBy === 'YEAR_DESC') {
-        return b.year - a.year
-      }
+      if (sortBy === 'RELEVANCE') return b.matchScore - a.matchScore
+      if (sortBy === 'STANDARD_ASC') return a.standardNumber.localeCompare(b.standardNumber)
+      if (sortBy === 'YEAR_DESC') return b.year - a.year
       return 0
     })
 
@@ -839,15 +1005,82 @@ export class MockStandardsDiscoveryService implements StandardsDiscoveryService 
   }
 
   public async getStandardById(id: string): Promise<StandardDiscoveryItem | null> {
-    await new Promise((res) => setTimeout(res, 30))
-    const item = this.catalog.find(
+    try {
+      const response = await fetch(`/api/v1/bis/standards/${encodeURIComponent(id)}`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+      })
+
+      if (response.ok) {
+        const json = await response.json()
+        const item = json.data
+        if (item) {
+          const fallback = this.fallbackCatalog.find(
+            (f) =>
+              f.id.toLowerCase() === id.toLowerCase() ||
+              f.standardNumber.toLowerCase() === (item.standardNumber || '').toLowerCase()
+          )
+
+          const clauses = (item.clauses && item.clauses.length > 0)
+            ? item.clauses.map((c: any) => ({
+                clauseNumber: c.clauseNumber,
+                title: c.title || `Clause ${c.clauseNumber}`,
+                description: c.content,
+                testingMethod: c.clauseType || undefined,
+                prescribedTolerance: c.limits ? JSON.stringify(c.limits) : undefined,
+                isMandatoryCheck: c.isMandatory ?? true,
+              }))
+            : fallback?.clauses || []
+
+          const isMandatory = item.isMandatory || item.mandatedByQco != null || (item.qcos && item.qcos.length > 0)
+          const qcoNotification =
+            item.mandatedByQco ||
+            (item.qcos && item.qcos[0] ? item.qcos[0].orderNumber : undefined) ||
+            fallback?.qcoNotificationNumber
+
+          return {
+            id: item.id || item.standardNumber,
+            standardNumber: item.standardNumber,
+            title: item.title,
+            year: item.year || 2020,
+            category: item.category || item.division || fallback?.category || 'General',
+            isMandatoryQco: isMandatory,
+            qcoNotificationNumber: qcoNotification,
+            status: (item.status as any) || 'ACTIVE',
+            shortDescription: item.scope || item.description || fallback?.shortDescription || item.title,
+            scope: item.scope || item.description || fallback?.scope || item.title,
+            criticalParameters: fallback?.criticalParameters || ['Conformity Specifications', 'Quality Tolerances'],
+            clauses,
+            applicableCommodities: fallback?.applicableCommodities || [item.title],
+            applicableScheme: isMandatory ? 'SCHEME_I' : 'SCHEME_II',
+            accreditedLabCount: fallback?.accreditedLabCount || 10,
+            labCount: fallback?.labCount || 10,
+            matchScore: 98,
+            matchLevel: 'HIGH',
+            officialSource: {
+              gazetteNumber: qcoNotification,
+              bisPortalUrl: item.sourceUrl || fallback?.officialSource.bisPortalUrl || 'https://www.services.bis.gov.in',
+              yearOfPublication: item.year || 2020,
+              ministryOrDepartment: fallback?.officialSource.ministryOrDepartment || 'Bureau of Indian Standards',
+            },
+            documentReferenceUrl: item.sourceUrl || fallback?.documentReferenceUrl,
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Backend /api/v1/bis/standards/[id] fetch failed, falling back:', err)
+    }
+
+    // Fallback to local catalog
+    const item = this.fallbackCatalog.find(
       (c) => c.id.toLowerCase() === id.toLowerCase() || c.standardNumber.toLowerCase() === id.toLowerCase()
     )
     return item ?? null
   }
 
   public async getFeaturedStandards(): Promise<StandardDiscoveryItem[]> {
-    return this.catalog.slice(0, 5)
+    const result = await this.searchStandards({ qcoType: 'MANDATORY' })
+    return result.items.slice(0, 5)
   }
 
   public async findStandardsByDescription(description: string): Promise<StandardsDiscoveryResult> {
@@ -856,6 +1089,7 @@ export class MockStandardsDiscoveryService implements StandardsDiscoveryService 
 }
 
 /**
- * Export singleton instance
+ * Export singleton instance using real API client with fallback
  */
-export const standardsDiscoveryService = new MockStandardsDiscoveryService()
+export const standardsDiscoveryService = new ApiStandardsDiscoveryService()
+

@@ -3,7 +3,7 @@
 import React from 'react'
 import Link from 'next/link'
 import { Modal } from '@/components/ui/Modal'
-import { Badge } from '@/components/ui/Badge'
+import { Badge, QcoRegimeBadge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
 import { type StandardDiscoveryItem } from '@/types/standards'
 import {
@@ -79,11 +79,10 @@ export function StandardDetailModal({
               {standard.standardNumber}
             </span>
 
-            {standard.isMandatoryQco ? (
-              <Badge variant="error" dot>Mandatory QCO Enforced</Badge>
-            ) : (
-              <Badge variant="default">Voluntary Standard</Badge>
-            )}
+            <QcoRegimeBadge
+              isMandatory={standard.isMandatoryQco}
+              label={standard.isMandatoryQco ? 'Mandatory QCO Enforced' : 'Voluntary Standard'}
+            />
 
             <Badge variant="info">
               {standard.applicableScheme === 'SCHEME_I'

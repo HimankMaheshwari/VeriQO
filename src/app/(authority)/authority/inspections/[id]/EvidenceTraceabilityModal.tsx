@@ -256,6 +256,7 @@ export function EvidenceTraceabilityModal({
                   </span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-4)' }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={`/api/v1/files/${physicalTrace.scanImage.storageKey.replace(/\\/g, '/')}`}
                     alt={physicalTrace.scanImage.originalFilename}

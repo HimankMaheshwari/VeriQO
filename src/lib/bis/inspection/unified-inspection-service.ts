@@ -114,15 +114,20 @@ export class UnifiedInspectionService {
       rawOcrText: scan.rawOcrText,
     })
 
-    const topStandardNumber = candidateStandards[0]?.standardNumber !== 'UNKNOWN'
-      ? candidateStandards[0]?.standardNumber
-      : null
+    const topCandidate = candidateStandards[0]
+    const topStandardNumber =
+      topCandidate &&
+      topCandidate.standardNumber !== 'UNKNOWN' &&
+      topCandidate.standardNumber !== 'NOT_DETERMINED'
+        ? topCandidate.standardNumber
+        : null
 
     // ── 3. QCO APPLICABILITY (DETERMINISTIC STATUTORY CHECK) ────────────────────
     const qcoCheck = await this.qcoChecker.evaluateQco({
       category: scan.identifiedCategory,
       productName: scan.identifiedProductName,
       standardNumber: topStandardNumber,
+      isDetectedOnPackaging: Boolean(detectedStandardNumber),
     })
 
     // ── 4. BIS LICENSE VERIFICATION (CML, CRS, HUID) ───────────────────────────
@@ -237,9 +242,12 @@ export class UnifiedInspectionService {
     } else if (bisStatus === 'POTENTIAL_NON_COMPLIANCE') {
       overallStatus = 'POTENTIAL_NON_COMPLIANCE'
       overallSummary = 'BIS statutory deficiency detected (e.g. missing mandatory certification or non-operative license). Legal Metrology declarations comply.'
-    } else if (bisStatus === 'NEEDS_REVIEW') {
+    } else if (bisStatus === 'NEEDS_REVIEW' || candidateStandards[0]?.standardNumber === 'NOT_DETERMINED') {
       overallStatus = 'NEEDS_REVIEW'
-      overallSummary = 'Officer review required: Unverified standard claim or ambiguous BIS license reference on packaging.'
+      overallSummary =
+        candidateStandards[0]?.standardNumber === 'NOT_DETERMINED'
+          ? 'Pending verification: Packaging declarations comply with Legal Metrology. Indian Standard not determined (voluntary / no mandatory QCO identified). Officer verification pending.'
+          : 'Officer review required: Unverified standard claim or ambiguous BIS license reference on packaging.'
     } else {
       overallStatus = 'COMPLIANT'
       overallSummary = 'Packaging conforms to verified Legal Metrology declarations and applicable Indian Standards.'

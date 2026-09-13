@@ -17,6 +17,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Spinner } from '@/components/ui/Spinner'
 import { EmptyState } from '@/components/ui/EmptyState'
+import { StandardCardSkeleton } from '@/components/ui/Skeleton'
 import {
   Search,
   X,
@@ -30,6 +31,7 @@ import {
   Layers,
   ShieldAlert,
   Bot,
+  AlertTriangle,
 } from 'lucide-react'
 
 const QUICK_EXAMPLES = [
@@ -69,6 +71,7 @@ export function StandardsDiscoveryClient({
   const [results, setResults] = useState<StandardDiscoveryItem[]>([])
   const [totalCount, setTotalCount] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
+  const [searchError, setSearchError] = useState<string | null>(null)
   const [activeModalStandard, setActiveModalStandard] = useState<StandardDiscoveryItem | null>(null)
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
 
@@ -82,6 +85,7 @@ export function StandardsDiscoveryClient({
       sort?: SortOption
     }) => {
       setIsLoading(true)
+      setSearchError(null)
       try {
         const res = await standardsDiscoveryService.searchStandards({
           query: overrideParams?.q !== undefined ? overrideParams.q : query,
@@ -92,8 +96,9 @@ export function StandardsDiscoveryClient({
         })
         setResults(res.items)
         setTotalCount(res.totalCount)
-      } catch (err) {
+      } catch (err: any) {
         console.error('Error fetching standards:', err)
+        setSearchError('Unable to retrieve standards right now. Please verify your connection and try again.')
       } finally {
         setIsLoading(false)
       }
@@ -321,8 +326,19 @@ export function StandardsDiscoveryClient({
               onClick={() => performSearch()}
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
             >
-              <Sparkles size={14} style={{ color: 'var(--brand-400)' }} /> Find Applicable Standards
+              <Sparkles size={14} style={{ color: 'var(--brand-400)' }} /> Find Standards
             </Button>
+            <Link
+              href={`/consumer/journey?product=${encodeURIComponent(productDescription || query || 'Stainless Steel Water Bottle')}`}
+              style={{ textDecoration: 'none' }}
+            >
+              <Button
+                variant="primary"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, whiteSpace: 'nowrap' }}
+              >
+                <Layers size={14} /> Full Journey &rarr;
+              </Button>
+            </Link>
           </div>
 
           {/* Quick Example Pills */}
@@ -551,28 +567,30 @@ export function StandardsDiscoveryClient({
         </div>
       </div>
 
-      {/* 3. Standards Cards Stream or Loading/Empty State */}
+      {/* 3. Standards Cards Stream or Loading/Error/Empty State */}
       {isLoading ? (
-        <Card>
-          <CardBody
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: 'var(--space-16)',
-              gap: 'var(--space-4)',
-            }}
-          >
-            <Spinner size="lg" />
-            <div style={{ textAlign: 'center' }}>
-              <div style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--text-primary)' }}>
-                Consulting Indian Standards Directory...
-              </div>
-              <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 4 }}>
-                Evaluating specifications, Quality Control Orders, and test requirements
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-4)' }}>
+          <StandardCardSkeleton />
+          <StandardCardSkeleton />
+          <StandardCardSkeleton />
+        </div>
+      ) : searchError ? (
+        <Card style={{ border: '1px solid var(--color-error)', background: 'rgba(239, 68, 68, 0.04)' }}>
+          <CardBody style={{ padding: 'var(--space-6)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 16, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <AlertTriangle size={24} style={{ color: 'var(--color-error)', flexShrink: 0 }} />
+              <div>
+                <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: 'var(--text-sm)' }}>
+                  Unable to retrieve standards right now
+                </div>
+                <div style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 2 }}>
+                  {searchError}
+                </div>
               </div>
             </div>
+            <Button variant="secondary" size="sm" onClick={() => performSearch()}>
+              <RefreshCw size={14} style={{ marginRight: 6 }} /> Retry Search
+            </Button>
           </CardBody>
         </Card>
       ) : results.length === 0 ? (

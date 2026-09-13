@@ -19,8 +19,10 @@ export interface QcoCheckInputParams {
   category?: string | null
   productName?: string | null
   standardNumber?: string | null
+  candidateStandards?: Array<{ standardNumber: string }> | null
   hsCode?: string | null
   inspectionDate?: Date | string
+  isDetectedOnPackaging?: boolean
 }
 
 export class QcoChecker {
@@ -36,7 +38,8 @@ export class QcoChecker {
   async evaluateQco(input: QcoCheckInputParams): Promise<QcoApplicabilityResult> {
     const category = (input.category || '').trim()
     const productName = (input.productName || '').trim()
-    const standardNumber = (input.standardNumber || '').trim()
+    const candidateStdNum = input.candidateStandards?.[0]?.standardNumber || ''
+    const standardNumber = (input.standardNumber || candidateStdNum).trim()
     const hsCode = (input.hsCode || '').trim()
     const evalDate = input.inspectionDate ? new Date(input.inspectionDate) : new Date()
 
@@ -47,9 +50,14 @@ export class QcoChecker {
       hsCode,
     })
 
-    // Also check by standardNumber if provided and not matched yet
+    // Also check by standardNumber ONLY if explicitly detected on packaging OR if commodity matches QCO schedule
     let applicableOrder = rawResult.applicableOrder
-    if (!applicableOrder && standardNumber && standardNumber !== 'UNKNOWN') {
+    if (
+      !applicableOrder &&
+      standardNumber &&
+      standardNumber !== 'UNKNOWN' &&
+      standardNumber !== 'NOT_DETERMINED'
+    ) {
       const allQcos = await this.qcoService.listQcos()
       const stdMatch = allQcos.find((q) => {
         if (!q.standardNumber) return false
@@ -57,19 +65,30 @@ export class QcoChecker {
         const inputStd = standardNumber.toUpperCase().replace(/\s+/g, '')
         return qcoStd.includes(inputStd) || inputStd.includes(qcoStd)
       })
+
       if (stdMatch) {
-        applicableOrder = stdMatch
+        const isDetected = input.isDetectedOnPackaging === true
+        const qcoProductText = `${stdMatch.applicableProducts} ${stdMatch.orderTitle}`.toLowerCase()
+        const prodTokens = `${productName} ${category}`
+          .toLowerCase()
+          .split(/[\s,/._-]+/)
+          .filter((w) => w.length >= 3)
+        const hasCommodityMatch = prodTokens.some((t) => qcoProductText.includes(t))
+
+        if (isDetected || hasCommodityMatch) {
+          applicableOrder = stdMatch
+        }
       }
     }
 
     if (!applicableOrder) {
       // If category and product are completely unknown
-      if (!category && !productName && !standardNumber) {
+      if (!category && !productName && (!standardNumber || standardNumber === 'UNKNOWN' || standardNumber === 'NOT_DETERMINED')) {
         return {
           status: 'UNKNOWN',
           isMandatoryCertification: false,
           orderTitle: null,
-          orderNumber: null,
+          orderNumber: 'NO APPLICABLE QCO IDENTIFIED',
           applicableStandards: [],
           effectiveDate: null,
           isExempt: false,
@@ -83,12 +102,12 @@ export class QcoChecker {
         status: 'NOT_APPLICABLE',
         isMandatoryCertification: false,
         orderTitle: null,
-        orderNumber: null,
+        orderNumber: 'NO APPLICABLE QCO IDENTIFIED',
         applicableStandards: [],
         effectiveDate: null,
         isExempt: false,
         exemptionReason: null,
-        guidance: `No active mandatory Quality Control Order (QCO) identified for product category "${category || productName || 'unspecified'}". Voluntary BIS certification may still apply.`,
+        guidance: 'No active mandatory Quality Control Order (QCO) identified for this commodity. Voluntary BIS certification may still apply.',
         isDemoRecord: false,
       }
     }

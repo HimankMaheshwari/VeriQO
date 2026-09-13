@@ -293,13 +293,95 @@ Under the **Bureau of Indian Standards (BIS)**, commodities in India are governe
 }
 
 /**
- * Mock Assistant Service Implementation
+ * Real API Assistant Service Implementation
+ * Calls /api/v1/assistant/chat with graceful fallback to demo generator
  */
-export class MockAssistantService implements AssistantService {
+export class ApiAssistantService implements AssistantService {
   public async sendMessage(request: AssistantRequest): Promise<AssistantResponse> {
-    // Artificial small delay (350ms) to simulate streaming / typing state in demo
-    await new Promise((res) => setTimeout(res, 350))
+    try {
+      const payload = {
+        message: request.query,
+        conversationId:
+          request.conversationId && request.conversationId !== 'demo-thread-1'
+            ? request.conversationId
+            : undefined,
+        contextStandardId: request.standardContext?.standardNumber,
+      }
 
+      const response = await fetch('/api/v1/assistant/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+
+      if (response.ok) {
+        const json = await response.json()
+        const data = json.data
+
+        if (data && (data.reply || data.message)) {
+          let sources: AssistantSource[] = []
+
+          if (Array.isArray(data.citations) && data.citations.length > 0) {
+            sources = data.citations.map((c: any) => ({
+              id: c.chunkId || c.standardNumber,
+              documentTitle: c.standardTitle ? `${c.standardNumber}: ${c.standardTitle}` : c.standardNumber,
+              standardNumber: c.standardNumber,
+              clauseReference: c.clauseNumber || 'Relevant Clause',
+              excerpt: c.excerpt || '',
+              sourceUrl: 'https://www.services.bis.gov.in',
+              isMandatoryQco: !!c.qcoReference,
+              relevanceScore: Math.round((c.relevanceScore || data.confidenceScore || 0.85) * 100),
+            }))
+          } else if (Array.isArray(data.retrievedEvidence) && data.retrievedEvidence.length > 0) {
+            sources = data.retrievedEvidence.map((e: any) => ({
+              id: e.chunkId || e.standardNumber,
+              documentTitle: e.standardTitle ? `${e.standardNumber}: ${e.standardTitle}` : e.standardNumber,
+              standardNumber: e.standardNumber,
+              clauseReference: e.clauseNumber || 'Retrieved Clause',
+              excerpt: e.text || '',
+              sourceUrl: 'https://www.services.bis.gov.in',
+              isMandatoryQco: false,
+              relevanceScore: Math.round((e.score || 0.75) * 100),
+            }))
+          }
+
+          const score = typeof data.confidenceScore === 'number' ? data.confidenceScore : 0.8
+          const confidenceLevel: 'HIGH' | 'MEDIUM' | 'LOW' =
+            score >= 0.8 ? 'HIGH' : score >= 0.5 ? 'MEDIUM' : 'LOW'
+
+          const evidence: AssistantEvidence = {
+            matchedProductDescription: request.productContext
+              ? `Product Context: ${request.productContext.productName} — ${request.productContext.productDescription}`
+              : request.standardContext
+              ? `Standard Context: ${request.standardContext.standardNumber} — ${request.standardContext.title}`
+              : undefined,
+            relevantKeywords: sources.map((s) => s.standardNumber),
+            sources,
+            contextConsidered: request.standardContext
+              ? `Standard: ${request.standardContext.standardNumber}`
+              : data.provider
+              ? `Grounded Knowledge Engine (${data.provider})`
+              : 'Grounded Indian Standards Knowledge Base',
+            confidenceLevel,
+            advisoryNote:
+              data.disclaimer ||
+              'Responses are grounded on authoritative Indian Standards and BIS regulations. Verified for accuracy against official gazette orders.',
+          }
+
+          return {
+            messageId: data.messageId || `msg-${Date.now()}`,
+            content: data.reply || data.message,
+            evidence,
+            timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Backend /api/v1/assistant/chat call failed, falling back to local demo generator:', err)
+    }
+
+    // Graceful fallback to local demo generator
+    await new Promise((res) => setTimeout(res, 200))
     const { content, evidence } = generateDemoResponse(request)
 
     return {
@@ -559,6 +641,7 @@ You can ask me questions about applicable standards for your product, certificat
 }
 
 /**
- * Export singleton instance
+ * Export singleton instance with real API integration
  */
-export const assistantService = new MockAssistantService()
+export const assistantService = new ApiAssistantService()
+

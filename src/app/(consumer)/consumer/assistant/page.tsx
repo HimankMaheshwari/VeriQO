@@ -26,6 +26,7 @@ interface AssistantPageProps {
     productName?: string
     productDesc?: string
     cat?: string
+    q?: string
   }
 }
 
@@ -35,6 +36,7 @@ export default function AssistantPage({ searchParams }: AssistantPageProps) {
   const activeProductName = searchParams?.productName
   const activeProductDesc = searchParams?.productDesc
   const activeCategory = searchParams?.cat
+  const activeQuery = searchParams?.q || activeTopic
 
   const initialStandardContext: StandardContext | undefined = activeStandard
     ? {
@@ -76,6 +78,7 @@ export default function AssistantPage({ searchParams }: AssistantPageProps) {
             mode="consumer"
             initialStandardContext={initialStandardContext}
             initialProductContext={initialProductContext}
+            initialQuery={activeQuery}
             headerTitle="BIS Standards & Regulations Assistant"
             headerDescription="Conversational Guidance for Indian Standards & Conformity"
           />

@@ -82,13 +82,57 @@ export class MockAuthorityVerificationService implements AuthorityVerificationSe
 
     // Default fallback when no specific standard is identified in demo catalog
     return {
-      standardNumber: 'Not available in demo data',
-      standardTitle: 'Commodity QCO cross-reference pending authoritative BIS registry sync',
-      qcoNotificationNumber: 'Not available in demo data',
-      issuingMinistry: 'Not available in demo data',
-      verificationStatus: 'Unclassified / Pending Officer Verification',
+      standardNumber: 'NOT DETERMINED',
+      standardTitle: 'No Applicable Indian Standard Identified',
+      qcoNotificationNumber: 'NO APPLICABLE QCO IDENTIFIED',
+      issuingMinistry: 'Ministry of Consumer Affairs / BIS',
+      verificationStatus: 'VOLUNTARY / NOT DETERMINED',
       isMandatory: false,
     }
+  }
+
+  public async fetchQcoReferenceForProduct(
+    productName: string,
+    category?: string | null
+  ): Promise<QcoReferenceInfo> {
+    try {
+      const response = await fetch('/api/v1/bis/qco/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          productName,
+          category: category || productName,
+          productCategory: category,
+        }),
+      })
+
+      if (response.ok) {
+        const json = await response.json()
+        const d = json.data
+        if (d) {
+          const isMandatory = Boolean(d.isMandatoryCertification)
+          return {
+            standardNumber:
+              (d.applicableStandards && d.applicableStandards[0]) || 'NOT DETERMINED',
+            standardTitle:
+              d.applicableOrder?.orderTitle ||
+              (isMandatory ? 'Mandatory Quality Control Order' : 'No Applicable Indian Standard Identified'),
+            qcoNotificationNumber:
+              d.applicableOrder?.orderNumber ||
+              (isMandatory ? 'Mandatory Order' : 'NO APPLICABLE QCO IDENTIFIED'),
+            issuingMinistry: d.applicableOrder?.ministry || 'Ministry of Consumer Affairs / BIS',
+            verificationStatus: isMandatory
+              ? `Mandatory BIS Scheme Under ${d.applicableOrder?.orderTitle || 'Central QCO'}`
+              : 'VOLUNTARY / NOT DETERMINED',
+            isMandatory,
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Backend /api/v1/bis/qco/check call failed, falling back to local heuristic:', err)
+    }
+
+    return this.getQcoReferenceForProduct(productName, category)
   }
 
   public getTraceabilityEvidenceItems(

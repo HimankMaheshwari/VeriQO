@@ -3,7 +3,9 @@ import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, CardHeader, CardTitle, CardBody } from '@/components/ui/Card'
 import { Badge } from '@/components/ui/Badge'
 import { Button } from '@/components/ui/Button'
+import { HuidVerifierWidget } from '@/components/standards/HuidVerifierWidget'
 import { Gem, ShieldCheck, CheckCircle2, AlertTriangle, Search, Info, HelpCircle } from 'lucide-react'
+
 
 export const metadata = {
   title: 'Hallmarking & HUID Verification | VeriQO PS107',
@@ -128,40 +130,9 @@ export default function HallmarkingPage() {
         </div>
       </div>
 
-      {/* HUID Verification Checker Shell */}
-      <Card style={{ marginBottom: 'var(--space-8)' }}>
-        <CardHeader>
-          <CardTitle style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Search size={18} color="var(--brand-400)" />
-            HUID Format Validation &amp; Purity Lookup
-          </CardTitle>
-        </CardHeader>
-        <CardBody>
-          <div style={{ display: 'flex', gap: 'var(--space-3)', maxWidth: 540 }}>
-            <input
-              type="text"
-              placeholder="Enter 6-digit HUID code (e.g. A3F89K)..."
-              maxLength={6}
-              style={{
-                flex: 1,
-                background: 'var(--bg-input)',
-                border: '1px solid var(--border-default)',
-                borderRadius: 'var(--radius-md)',
-                padding: '10px 14px',
-                color: 'var(--text-primary)',
-                fontFamily: 'var(--font-mono)',
-                textTransform: 'uppercase',
-                fontSize: 'var(--text-sm)',
-                outline: 'none',
-              }}
-            />
-            <Button variant="primary">Verify HUID</Button>
-          </div>
-          <p style={{ fontSize: 'var(--text-xs)', color: 'var(--text-muted)', marginTop: 8 }}>
-            Validation adheres strictly to Bureau of Indian Standards HUID registry format (6 alphanumeric characters, laser engraved by accredited AHC).
-          </p>
-        </CardBody>
-      </Card>
+      {/* Functional HUID Verification Checker */}
+      <HuidVerifierWidget />
+
 
       {/* Purity Karat Reference Table */}
       <div>

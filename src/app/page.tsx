@@ -1,6 +1,6 @@
 import React from 'react'
 import Link from 'next/link'
-import { ShieldCheck, ScanLine, Scale, FileSearch, ArrowRight, CheckCircle } from 'lucide-react'
+import { ShieldCheck, ScanLine, Scale, FileSearch, ArrowRight, CheckCircle, Sparkles } from 'lucide-react'
 
 export default function LandingPage() {
   return (
@@ -117,7 +117,7 @@ export default function LandingPage() {
             }}
           >
             <Scale size={12} />
-            Legal Metrology Act, 2009 · Packaged Commodities Rules, 2011
+            Legal Metrology Act, 2009 · Bureau of Indian Standards (BIS) Act, 2016 · SIH PS107
           </div>
 
           <h1
@@ -129,7 +129,7 @@ export default function LandingPage() {
             }}
           >
             <span style={{ color: 'var(--text-primary)' }}>AI-Powered </span>
-            <span className="gradient-text">Legal Metrology</span>
+            <span className="gradient-text">Standards &amp; Metrology</span>
             <br />
             <span style={{ color: 'var(--text-primary)' }}>Compliance Platform</span>
           </h1>
@@ -138,17 +138,36 @@ export default function LandingPage() {
             style={{
               fontSize: 'var(--text-lg)',
               color: 'var(--text-secondary)',
-              maxWidth: 600,
+              maxWidth: 680,
               margin: '0 auto var(--space-10)',
               lineHeight: 'var(--leading-relaxed)',
             }}
           >
-            Scan real packaged commodities, extract declarations using AI/OCR, verify against
-            online sources, and evaluate compliance against Indian Legal Metrology rules — all
-            in one platform.
+            Verify packaged commodities against Legal Metrology Rules, query the AI Conversational
+            Assistant for Indian Standards &amp; BIS certification schemes, locate testing laboratories, and
+            check gold/silver hallmarking — all in one unified platform.
           </p>
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: 'var(--space-4)', flexWrap: 'wrap' }}>
+            <Link
+              href="/consumer/assistant"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: 'var(--space-4) var(--space-8)',
+                background: 'linear-gradient(135deg, var(--brand-600), var(--brand-700))',
+                color: 'white',
+                borderRadius: 'var(--radius-lg)',
+                fontSize: 'var(--text-base)',
+                fontWeight: 'var(--font-semibold)',
+                textDecoration: 'none',
+                boxShadow: '0 0 24px rgba(59,130,246,0.35)',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              Ask Standards AI <ArrowRight size={18} />
+            </Link>
             <Link
               href="/register"
               style={{
@@ -156,26 +175,7 @@ export default function LandingPage() {
                 alignItems: 'center',
                 gap: 'var(--space-2)',
                 padding: 'var(--space-4) var(--space-8)',
-                background: 'var(--brand-600)',
-                color: 'white',
-                borderRadius: 'var(--radius-lg)',
-                fontSize: 'var(--text-base)',
-                fontWeight: 'var(--font-semibold)',
-                textDecoration: 'none',
-                boxShadow: '0 0 24px rgba(59,130,246,0.3)',
-                transition: 'all var(--transition-fast)',
-              }}
-            >
-              Start Scanning <ArrowRight size={18} />
-            </Link>
-            <Link
-              href="/login"
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 'var(--space-2)',
-                padding: 'var(--space-4) var(--space-8)',
-                background: 'transparent',
+                background: 'var(--bg-surface)',
                 color: 'var(--text-primary)',
                 border: '1px solid var(--border-strong)',
                 borderRadius: 'var(--radius-lg)',
@@ -185,7 +185,26 @@ export default function LandingPage() {
                 transition: 'all var(--transition-fast)',
               }}
             >
-              Authority Sign In
+              Scan Packaged Product
+            </Link>
+            <Link
+              href="/login"
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 'var(--space-2)',
+                padding: 'var(--space-4) var(--space-8)',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-default)',
+                borderRadius: 'var(--radius-lg)',
+                fontSize: 'var(--text-base)',
+                fontWeight: 'var(--font-medium)',
+                textDecoration: 'none',
+                transition: 'all var(--transition-fast)',
+              }}
+            >
+              Officer Portal
             </Link>
           </div>
         </div>
@@ -244,6 +263,14 @@ export default function LandingPage() {
               title: 'Admin Portal',
               desc: 'Manage users, maintain the versioned legal rule engine, view audit logs, and configure the system.',
               features: ['User Management', 'Rule Versioning', 'Audit Logs', 'System Config'],
+            },
+            {
+              icon: <Sparkles size={24} />,
+              iconBg: 'rgba(16,185,129,0.15)',
+              iconColor: 'var(--color-success)',
+              title: 'AI Standards Assistant (PS107)',
+              desc: 'Consult conversational AI on Indian Standards (IS), mandatory QCO orders, BIS certification schemes, test labs, and hallmarking.',
+              features: ['IS Standards Catalog', 'BIS Schemes & Licensing', 'Testing Labs Directory', 'Hallmarking & HUID Checker'],
             },
           ].map((card) => (
             <div

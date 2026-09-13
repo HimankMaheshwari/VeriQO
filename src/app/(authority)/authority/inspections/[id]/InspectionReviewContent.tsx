@@ -28,6 +28,7 @@ import {
 import { InspectionActionToolbar } from './InspectionActionToolbar'
 import { EvidenceTraceabilityModal } from './EvidenceTraceabilityModal'
 import { EvidenceTimelineCard } from './EvidenceTimelineCard'
+import { AuthorityVerificationPanel } from '@/components/authority/AuthorityVerificationPanel'
 import type { EvidenceTimelineItem } from '@/lib/inspections/types'
 
 const FIELD_LABELS: Record<string, string> = {
@@ -236,6 +237,19 @@ export function InspectionReviewContent({
               </div>
             </Card>
           )}
+
+          {/* PS107 Officer QCO & Regulatory Verification Panel */}
+          <AuthorityVerificationPanel
+            inspectionId={inspection.id}
+            productName={productName}
+            brandName={brandName}
+            category={scan?.identifiedCategory || inspection.category || 'Packaged Commodity'}
+            scanId={scan?.id}
+            userRole={userRole}
+            legalMetrologyChecksCount={complianceChecks.length}
+            legalMetrologyViolationsCount={violations.length}
+            scanImagesCount={scan?.images?.length || 0}
+          />
 
           {/* 2. Legal Metrology Compliance Checks (Phase 3A/3B Deterministic Results) */}
           <Card>

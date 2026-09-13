@@ -209,7 +209,26 @@ p { line-height: var(--leading-relaxed); color: var(--text-secondary); }
 .animate-slide-in  { animation: slideIn 0.25s ease both; }
 .animate-spin      { animation: spin 1s linear infinite; }
 
-/* ── Responsive ──────────────────────────────────────────────────────────── */
+/* ── Responsive Utilities ─────────────────────────────────────────────────── */
+.responsive-grid-2col {
+  display: grid;
+  grid-template-columns: 1fr 340px;
+  gap: var(--space-6);
+  align-items: start;
+}
+
+.table-scroll-container {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+@media (max-width: 1024px) {
+  .responsive-grid-2col {
+    grid-template-columns: 1fr;
+  }
+}
+
 @media (max-width: 768px) {
   .portal-sidebar {
     transform: translateX(-100%);

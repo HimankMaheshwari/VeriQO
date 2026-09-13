@@ -1,6 +1,8 @@
 import { requireRole, ok, serverError } from '@/lib/api-helpers'
 import { defaultAnalyticsService } from '@/lib/inspections/analytics-service'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(_request: Request) {
   const session = await requireRole(['AUTHORITY_OFFICER', 'SENIOR_AUTHORITY', 'ADMIN'])
   if (session instanceof Response) return session

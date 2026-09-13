@@ -6,6 +6,7 @@ import type {
   ViolationSeverity,
   Role,
 } from '@prisma/client'
+import type { BisInspectionResult } from '@/types/bis-inspection'
 
 export interface CreateInspectionInput {
   productId?: string | null
@@ -327,6 +328,8 @@ export interface InspectionReportData {
     decidedAt: Date
     officerName: string
   } | null
+  bis?: BisInspectionResult | null
+  checklist?: Record<string, boolean> | null
 }
 
 export interface AuthorityAnalytics {

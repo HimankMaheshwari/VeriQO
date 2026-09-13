@@ -63,7 +63,7 @@ export default async function AuthorityDashboard() {
                 textDecoration: 'none',
               }}
             >
-              <AlertTriangle size={16} style={{ color: '#f97316' }} /> Risk Queue ({riskData.summary.criticalCount + riskData.summary.highCount})
+              <AlertTriangle size={16} style={{ color: 'var(--color-warning)' }} /> Risk Queue ({riskData.summary.criticalCount + riskData.summary.highCount})
             </Link>
             <Link
               href="/authority/inspections/new"
@@ -106,8 +106,8 @@ export default async function AuthorityDashboard() {
             style={{
               padding: 8,
               borderRadius: 'var(--radius-md)',
-              background: riskData.summary.criticalCount > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(249,115,22,0.15)',
-              color: riskData.summary.criticalCount > 0 ? '#ef4444' : '#f97316',
+              background: riskData.summary.criticalCount > 0 ? 'rgba(239,68,68,0.15)' : 'rgba(245,158,11,0.15)',
+              color: riskData.summary.criticalCount > 0 ? 'var(--color-error)' : 'var(--color-warning)',
             }}
           >
             <AlertTriangle size={20} />
@@ -257,25 +257,25 @@ export default async function AuthorityDashboard() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Critical</span>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: '#ef4444' }}>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-error)' }}>
                 {analytics.violationsBySeverity.CRITICAL}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>High</span>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: '#f97316' }}>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-warning)' }}>
                 {analytics.violationsBySeverity.HIGH}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Medium</span>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: '#eab308' }}>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--color-warning)' }}>
                 {analytics.violationsBySeverity.MEDIUM}
               </span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Low</span>
-              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: '#3b82f6' }}>
+              <span style={{ fontSize: 'var(--text-sm)', fontWeight: 600, color: 'var(--brand-400)' }}>
                 {analytics.violationsBySeverity.LOW}
               </span>
             </div>
@@ -467,6 +467,7 @@ export default async function AuthorityDashboard() {
             <Link
               key={ins.id}
               href={`/authority/inspections/${ins.id}`}
+              className="hover-card"
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -476,7 +477,6 @@ export default async function AuthorityDashboard() {
                 border: '1px solid var(--border-default)',
                 borderRadius: 'var(--radius-lg)',
                 textDecoration: 'none',
-                transition: 'border-color var(--transition-fast)',
               }}
             >
               <div style={{ flex: 1, minWidth: 0 }}>
@@ -487,7 +487,7 @@ export default async function AuthorityDashboard() {
                   <span>Product: <strong>{ins.productName}</strong></span>
                   <span>Officer: <strong>{ins.officerName}</strong></span>
                   <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Clock size={11} /> {formatDate(ins.updatedAt)}
+                    <Clock size={12} /> {formatDate(ins.updatedAt)}
                   </span>
                 </div>
               </div>

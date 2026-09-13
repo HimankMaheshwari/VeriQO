@@ -26,8 +26,8 @@ export function Card({ children, className, hover, glass, style }: CardProps) {
   )
 }
 
-export function CardHeader({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {
-  return <div className={cx(styles['card-header'], className)} style={style}>{children}</div>
+export function CardHeader({ children, className, style, ...props }: React.HTMLAttributes<HTMLDivElement>) {
+  return <div className={cx(styles['card-header'], className)} style={style} {...props}>{children}</div>
 }
 
 export function CardTitle({ children, className, style }: { children: React.ReactNode; className?: string; style?: React.CSSProperties }) {

@@ -12,7 +12,9 @@ import {
   ComplianceBadge,
   Badge,
 } from '@/components/ui/Badge'
+import { BisStandardsCheckSection } from '@/components/consumer/BisStandardsCheckSection'
 import { formatDateTime, formatBytes } from '@/lib/utils'
+
 import {
   Info,
   Package,
@@ -27,6 +29,10 @@ import {
   ChevronDown,
   ChevronUp,
   Globe,
+  BookOpen,
+  Bot,
+  Sparkles,
+  ArrowRight,
 } from 'lucide-react'
 
 export interface SerializedScanImage {
@@ -447,6 +453,130 @@ export default function ScanDetailClient({ initialScan }: { initialScan: Seriali
           </div>
         </Card>
       </div>
+
+      {/* PS107 End-to-End Verification Pipeline Stepper */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: 'var(--space-3) var(--space-4)',
+          background: 'var(--bg-elevated)',
+          border: '1px solid var(--border-default)',
+          borderRadius: 'var(--radius-lg)',
+          marginBottom: 'var(--space-6)',
+          overflowX: 'auto',
+          gap: 'var(--space-2)',
+        }}
+      >
+        {[
+          { step: '1', title: 'Scan Package', status: 'done', href: '/consumer/scan' },
+          { step: '2', title: 'Compliance Findings', status: 'current' },
+          {
+            step: '3',
+            title: 'Related BIS Standards',
+            status: 'next',
+            href: `/consumer/standards?q=${encodeURIComponent(productName)}&cat=${encodeURIComponent(
+              scan.identifiedCategory || ''
+            )}`,
+          },
+          {
+            step: '4',
+            title: 'BIS Assistant',
+            status: 'next',
+            href: `/consumer/assistant?productName=${encodeURIComponent(
+              productName
+            )}&productDesc=${encodeURIComponent(
+              scan.rawOcrText?.slice(0, 150) || productName
+            )}&cat=${encodeURIComponent(scan.identifiedCategory || '')}`,
+          },
+          { step: '5', title: 'Authority Review', status: 'next' },
+          { step: '6', title: 'Officer Verification', status: 'next' },
+        ].map((item, idx, arr) => {
+          const content = (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8,
+                whiteSpace: 'nowrap',
+                opacity: item.status === 'next' ? 0.85 : 1,
+                cursor: item.href ? 'pointer' : 'default',
+              }}
+            >
+              <div
+                style={{
+                  width: 24,
+                  height: 24,
+                  borderRadius: 'var(--radius-full)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: 'var(--font-bold)',
+                  background:
+                    item.status === 'done'
+                      ? 'var(--color-success-bg)'
+                      : item.status === 'current'
+                      ? 'var(--brand-600)'
+                      : 'var(--bg-surface)',
+                  color:
+                    item.status === 'done'
+                      ? 'var(--color-success)'
+                      : item.status === 'current'
+                      ? 'white'
+                      : 'var(--text-muted)',
+                  border:
+                    item.status === 'done'
+                      ? '1px solid var(--color-success)'
+                      : item.status === 'current'
+                      ? '1px solid var(--brand-500)'
+                      : '1px solid var(--border-subtle)',
+                }}
+              >
+                {item.status === 'done' ? '✓' : item.step}
+              </div>
+              <span
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  fontWeight: item.status === 'current' ? 'var(--font-semibold)' : 'var(--font-normal)',
+                  color: item.status === 'current' ? 'var(--text-primary)' : 'var(--text-secondary)',
+                  textDecoration: item.href ? 'underline' : 'none',
+                  textUnderlineOffset: 3,
+                }}
+              >
+                {item.title}
+              </span>
+            </div>
+          )
+
+          return (
+            <React.Fragment key={item.step}>
+              {item.href ? (
+                <Link href={item.href} style={{ textDecoration: 'none' }}>
+                  {content}
+                </Link>
+              ) : (
+                content
+              )}
+              {idx < arr.length - 1 && (
+                <span style={{ color: 'var(--text-muted)', fontSize: 'var(--text-xs)', padding: '0 2px' }}>
+                  →
+                </span>
+              )}
+            </React.Fragment>
+          )
+        })}
+      </div>
+
+      {/* Live BIS Standards & QCO Dual-Domain Compliance Section */}
+      <BisStandardsCheckSection
+        scanId={scan.id}
+        productName={productName}
+        brandName={brandName}
+        category={scan.identifiedCategory || undefined}
+      />
+
 
       {/* Package Images Gallery & Side-by-Side OCR */}
       <Card style={{ marginBottom: 'var(--space-6)' }}>

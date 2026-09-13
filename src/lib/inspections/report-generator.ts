@@ -16,6 +16,8 @@ import {
   canUserAccessInspection,
   InspectionAccessError,
 } from './types'
+import { defaultUnifiedInspectionService } from '../bis/inspection/unified-inspection-service'
+import type { BisInspectionResult } from '@/types/bis-inspection'
 import crypto from 'crypto'
 
 export class ReportGenerator {
@@ -232,6 +234,39 @@ export class ReportGenerator {
         }
       : null
 
+    // 7.5 Process BIS Inspection Assessment
+    let bis: BisInspectionResult | null = null
+    if (scan) {
+      try {
+        const unified = await defaultUnifiedInspectionService.evaluateScan({
+          id: scan.id,
+          rawOcrText: scan.rawOcrText,
+          identifiedProductName: product?.name || scan.identifiedProductName,
+          identifiedBrand: product?.brand || scan.identifiedBrand,
+          identifiedCategory: product?.category || scan.identifiedCategory,
+          identifiedManufacturer: product?.manufacturer || scan.identifiedManufacturer,
+          extractedDeclarations: scan.extractedDeclarations,
+          images: scan.images,
+        })
+        bis = unified.bis
+      } catch (err) {
+        console.warn('Could not evaluate BIS inspection for report:', err)
+      }
+    } else if (product) {
+      try {
+        const unified = await defaultUnifiedInspectionService.evaluateScan({
+          id: `product-${product.id || 'virtual'}`,
+          identifiedProductName: product.name,
+          identifiedBrand: product.brand,
+          identifiedCategory: product.category,
+          identifiedManufacturer: product.manufacturer,
+        })
+        bis = unified.bis
+      } catch (err) {
+        console.warn('Could not evaluate product BIS for report:', err)
+      }
+    }
+
     // 8. Compute SHA-256 Security / Integrity Hash
     const integrityPayload = JSON.stringify({
       reportRef,
@@ -241,6 +276,7 @@ export class ReportGenerator {
       checksCount: complianceChecks.length,
       violationsCount: violations.length,
       decision: decision?.decision ?? null,
+      bisStatus: bis?.status ?? null,
       generatedAt: generatedAt.toISOString(),
     })
     const securityHash = crypto.createHash('sha256').update(integrityPayload).digest('hex')
@@ -289,6 +325,7 @@ export class ReportGenerator {
       onlineVerification,
       evidenceItems,
       decision,
+      bis,
     }
   }
 }

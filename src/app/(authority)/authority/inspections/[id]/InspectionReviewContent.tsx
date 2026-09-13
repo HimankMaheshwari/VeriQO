@@ -10,6 +10,7 @@ import {
   AuthorityDecisionBadge,
   ViolationSeverityBadge,
   Badge,
+  MarkDetectionBadge,
 } from '@/components/ui/Badge'
 import { formatDateTime } from '@/lib/utils'
 import {
@@ -28,7 +29,10 @@ import {
 import { InspectionActionToolbar } from './InspectionActionToolbar'
 import { EvidenceTraceabilityModal } from './EvidenceTraceabilityModal'
 import { EvidenceTimelineCard } from './EvidenceTimelineCard'
+import { AuthorityVerificationPanel } from '@/components/authority/AuthorityVerificationPanel'
+import { BisStandardsCheckSection } from '@/components/consumer/BisStandardsCheckSection'
 import type { EvidenceTimelineItem } from '@/lib/inspections/types'
+
 
 const FIELD_LABELS: Record<string, string> = {
   product_name: 'Product / Commodity Name',
@@ -103,7 +107,7 @@ export function InspectionReviewContent({
         hasViolations={violations.length > 0 || complianceChecks.some((c: any) => c.status === 'FAIL')}
       />
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 340px', gap: 'var(--space-6)' }}>
+      <div className="responsive-grid-2col">
         {/* Left Column: Primary Review Panels */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-6)' }}>
           {/* 1. Product & Packaging Physical Overview */}
@@ -179,6 +183,7 @@ export function InspectionReviewContent({
                           background: 'var(--bg-elevated)',
                         }}
                       >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={`/api/v1/files/${img.storageKey.replace(/\\/g, '/')}`}
                           alt={img.originalFilename}
@@ -236,6 +241,31 @@ export function InspectionReviewContent({
               </div>
             </Card>
           )}
+
+          {/* PS107 Officer Unified BIS & Standards Compliance Results */}
+          {scan?.id && (
+            <BisStandardsCheckSection
+              scanId={scan.id}
+              productName={productName}
+              brandName={brandName}
+              category={scan?.identifiedCategory || inspection.category || 'Packaged Commodity'}
+              isAuthorityView={true}
+            />
+          )}
+
+          {/* PS107 Officer QCO & Regulatory Verification Panel */}
+          <AuthorityVerificationPanel
+            inspectionId={inspection.id}
+            productName={productName}
+            brandName={brandName}
+            category={scan?.identifiedCategory || inspection.category || 'Packaged Commodity'}
+            scanId={scan?.id}
+            userRole={userRole}
+            legalMetrologyChecksCount={complianceChecks.length}
+            legalMetrologyViolationsCount={violations.length}
+            scanImagesCount={scan?.images?.length || 0}
+          />
+
 
           {/* 2. Legal Metrology Compliance Checks (Phase 3A/3B Deterministic Results) */}
           <Card>
@@ -520,17 +550,10 @@ export function InspectionReviewContent({
                           {decl.confidence ? `${Math.round(decl.confidence * 100)}%` : '—'}
                         </td>
                         <td style={{ padding: '8px 12px' }}>
-                          <Badge
-                            variant={
-                              decl.detectionStatus === 'DETECTED'
-                                ? 'success'
-                                : decl.detectionStatus === 'NOT_DETECTED'
-                                ? 'error'
-                                : 'default'
-                            }
-                          >
-                            {decl.detectionStatus}
-                          </Badge>
+                          <MarkDetectionBadge
+                            status={decl.detectionStatus}
+                            label={decl.detectionStatus === 'DETECTED' ? 'Detected' : decl.detectionStatus === 'NOT_DETECTED' ? 'Not Detected' : decl.detectionStatus}
+                          />
                         </td>
                       </tr>
                     ))}

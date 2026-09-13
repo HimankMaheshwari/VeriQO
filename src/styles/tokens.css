@@ -30,6 +30,12 @@
   --color-info:          #6366f1;
   --color-info-bg:       #e0e7ff;
   --color-info-dark:     #312e81;
+  --color-policy:        #818cf8;
+  --color-policy-bg:     rgba(99, 102, 241, 0.12);
+  --color-policy-dark:   #c7d2fe;
+  --color-detection:     #38bdf8;
+  --color-detection-bg:  rgba(14, 165, 233, 0.12);
+  --color-detection-dark:#bae6fd;
 
   /* ── Neutral Palette ───────────────────────────────────────────────────── */
   --neutral-0:   #ffffff;
